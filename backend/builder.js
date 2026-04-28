@@ -86,9 +86,10 @@ export async function createLogoSquadraAsset(dst = null, options = {}) {
   const source = await fileExists(sourcePath)
     ? sourcePath
     : LOGO_SQUADRA_FALLBACK;
+  const trimBackground = logoName === "logosquadra2" ? "#000000" : "#ffffff";
 
   const { data, info } = await sharp(source)
-    .trim({ background: "#ffffff", threshold: 25 })
+    .trim({ background: trimBackground, threshold: 25 })
     .resize(width, height, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
@@ -101,14 +102,22 @@ export async function createLogoSquadraAsset(dst = null, options = {}) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
-    if (r > 238 && g > 238 && b > 238) {
-      data[i + 3] = 0;
-    } else if (r > 225 && g > 225 && b > 225) {
-      data[i + 3] = Math.min(data[i + 3], 70);
-    } else if (r < 135 && g < 135 && b < 135) {
-      data[i] = 245;
-      data[i + 1] = 245;
-      data[i + 2] = 245;
+    if (logoName === "logosquadra2") {
+      if (r < 18 && g < 18 && b < 18) {
+        data[i + 3] = 0;
+      } else if (r < 35 && g < 35 && b < 35) {
+        data[i + 3] = Math.min(data[i + 3], 80);
+      }
+    } else {
+      if (r > 238 && g > 238 && b > 238) {
+        data[i + 3] = 0;
+      } else if (r > 225 && g > 225 && b > 225) {
+        data[i + 3] = Math.min(data[i + 3], 70);
+      } else if (r < 135 && g < 135 && b < 135) {
+        data[i] = 245;
+        data[i + 1] = 245;
+        data[i + 2] = 245;
+      }
     }
   }
 
