@@ -8,7 +8,10 @@ import sharp from "sharp";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.join(__dirname, "templates");
-const LOGO_SQUADRA_SOURCE = path.join(__dirname, "..", "LogoSquadra.png");
+const LOGO_SQUADRA_SOURCES = {
+  logosquadra: path.join(__dirname, "..", "LogoSquadra.png"),
+  logosquadra2: path.join(__dirname, "..", "LogoSquadra2.png"),
+};
 const LOGO_SQUADRA_FALLBACK = path.join(
   TEMPLATES_DIR,
   "resources",
@@ -30,6 +33,7 @@ const VALID_DEVICES = new Set([
 ]);
 
 const VALID_NUMBER_MODES = new Set(["none", "cardinal", "all"]);
+const VALID_LOGOS = new Set(["logosquadra", "logosquadra2"]);
 
 function safeColor(c, fallback = "YELLOW") {
   return VALID_COLORS.has(c) ? c : fallback;
@@ -42,6 +46,10 @@ function safeDevice(d, fallback = "fenix7pro") {
 function safeNumberMode(mode, showNumbers) {
   if (VALID_NUMBER_MODES.has(mode)) return mode;
   return showNumbers === false ? "none" : "cardinal";
+}
+
+function safeLogoName(name) {
+  return VALID_LOGOS.has(name) ? name : "logosquadra";
 }
 
 function safeText(s, max = 40) {
@@ -73,8 +81,10 @@ async function copyRecursive(src, dst) {
 export async function createLogoSquadraAsset(dst = null, options = {}) {
   const width = options.width || 160;
   const height = options.height || 62;
-  const source = await fileExists(LOGO_SQUADRA_SOURCE)
-    ? LOGO_SQUADRA_SOURCE
+  const logoName = safeLogoName(options.logoName);
+  const sourcePath = LOGO_SQUADRA_SOURCES[logoName];
+  const source = await fileExists(sourcePath)
+    ? sourcePath
     : LOGO_SQUADRA_FALLBACK;
 
   const { data, info } = await sharp(source)
@@ -131,6 +141,7 @@ function safeScale(n, fallback = 100) {
  */
 export async function buildFace(config, photoPath, tmpBase) {
   const numbersMode = safeNumberMode(config.numbersMode, config.showNumbers);
+  const logoName = safeLogoName(config.logoName);
   // Validazione / sanificazione
   const vars = {
     BACKGROUND_COLOR: safeColor(config.backgroundColor, "BLACK"),
@@ -209,7 +220,8 @@ export async function buildFace(config, photoPath, tmpBase) {
   await fs.unlink(drwTplPath);
 
   await createLogoSquadraAsset(
-    path.join(buildDir, "resources", "drawables", "logosquadra.png")
+    path.join(buildDir, "resources", "drawables", "logosquadra.png"),
+    { logoName }
   );
 
   // Processa foto (se presente)

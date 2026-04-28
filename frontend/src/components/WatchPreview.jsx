@@ -37,8 +37,8 @@ export default function WatchPreview({ config, photoUrl }) {
   useEffect(() => {
     const img = new Image();
     img.onload = () => { logosquadraRef.current = img; };
-    img.src = `/api/logosquadra?t=${Date.now()}`;
-  }, []);
+    img.src = `/api/logosquadra?logo=${encodeURIComponent(config.logoName || "logosquadra")}&t=${Date.now()}`;
+  }, [config.logoName]);
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");

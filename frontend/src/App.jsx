@@ -34,6 +34,7 @@ export default function App() {
     backgroundColor: "BLACK",
     accentColor: "YELLOW",
     secondHandColor: "WHITE",
+    logoName: "logosquadra",
     showHr: true,
     showBattery: true,
     showSeconds: true,
@@ -193,6 +194,16 @@ export default function App() {
                   {device.label}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Logo squadra</label>
+            <select
+              value={config.logoName}
+              onChange={(e) => update("logoName", e.target.value)}
+            >
+              <option value="logosquadra">Logo squadra</option>
+              <option value="logosquadra2">Logo squadra 2</option>
             </select>
           </div>
         </section>

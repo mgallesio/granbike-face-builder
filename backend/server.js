@@ -40,7 +40,11 @@ app.get("/api/health", (req, res) => {
 
 app.get("/api/logosquadra", async (req, res) => {
   try {
-    const png = await createLogoSquadraAsset(null, { width: 320, height: 124 });
+    const png = await createLogoSquadraAsset(null, {
+      width: 320,
+      height: 124,
+      logoName: req.query.logo,
+    });
     res.setHeader("Cache-Control", "no-store");
     res.type("png").send(png);
   } catch (e) {
