@@ -29,12 +29,19 @@ const VALID_DEVICES = new Set([
   "fenix7pronowifi", "fenix7xpronowifi",
 ]);
 
+const VALID_NUMBER_MODES = new Set(["none", "cardinal", "all"]);
+
 function safeColor(c, fallback = "YELLOW") {
   return VALID_COLORS.has(c) ? c : fallback;
 }
 
 function safeDevice(d, fallback = "fenix7pro") {
   return VALID_DEVICES.has(d) ? d : fallback;
+}
+
+function safeNumberMode(mode, showNumbers) {
+  if (VALID_NUMBER_MODES.has(mode)) return mode;
+  return showNumbers === false ? "none" : "cardinal";
 }
 
 function safeText(s, max = 40) {
@@ -123,6 +130,7 @@ function safeScale(n, fallback = 100) {
  * @param {string} tmpBase cartella base per build temporanee
  */
 export async function buildFace(config, photoPath, tmpBase) {
+  const numbersMode = safeNumberMode(config.numbersMode, config.showNumbers);
   // Validazione / sanificazione
   const vars = {
     BACKGROUND_COLOR: safeColor(config.backgroundColor, "BLACK"),
@@ -132,7 +140,9 @@ export async function buildFace(config, photoPath, tmpBase) {
     SHOW_BATTERY: !!config.showBattery,
     SHOW_SECONDS: !!config.showSeconds,
     SHOW_TICKS: config.showTicks !== false, // default true
-    SHOW_NUMBERS: config.showNumbers !== false,
+    SHOW_NUMBERS: numbersMode !== "none",
+    SHOW_CARDINAL_NUMBERS: numbersMode === "cardinal",
+    SHOW_ALL_NUMBERS: numbersMode === "all",
     HR_X: safeNumber(config.hrX, 130),
     HR_Y: safeNumber(config.hrY, 50),
     BATTERY_X: safeNumber(config.batteryX, 130),

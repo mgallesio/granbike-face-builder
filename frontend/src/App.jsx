@@ -39,6 +39,7 @@ export default function App() {
     showSeconds: true,
     showTicks: true,
     showNumbers: true,
+    numbersMode: "cardinal",
     hrX: 130,
     hrY: 50,
     batteryX: 130,
@@ -220,9 +221,20 @@ export default function App() {
           <Toggle checked={config.showTicks} onChange={(value) => update("showTicks", value)}>
             Tacche orarie 12/3/6/9
           </Toggle>
-          <Toggle checked={config.showNumbers} onChange={(value) => update("showNumbers", value)}>
-            Numeri 12/3/6/9
-          </Toggle>
+          <div className="field">
+            <label>Numeri</label>
+            <select
+              value={config.numbersMode}
+              onChange={(e) => {
+                update("numbersMode", e.target.value);
+                update("showNumbers", e.target.value !== "none");
+              }}
+            >
+              <option value="none">Nessuno</option>
+              <option value="cardinal">12/3/6/9</option>
+              <option value="all">Tutti 1-12</option>
+            </select>
+          </div>
           <Toggle checked={config.showSeconds} onChange={(value) => update("showSeconds", value)}>
             Lancetta secondi
           </Toggle>

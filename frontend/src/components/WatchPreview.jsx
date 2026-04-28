@@ -71,15 +71,24 @@ export default function WatchPreview({ config, photoUrl }) {
         );
       }
 
-      if (config.showNumbers) {
+      if (config.numbersMode !== "none" && config.showNumbers !== false) {
         ctx.fillStyle = accent;
         ctx.font = "bold 20px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("12", cx, cy - 96);
-        ctx.fillText("3", cx + 94, cy - 2);
-        ctx.fillText("6", cx, cy + 82);
-        ctx.fillText("9", cx - 94, cy - 2);
+        if (config.numbersMode === "all") {
+          for (let n = 1; n <= 12; n += 1) {
+            const angle = n * (2 * Math.PI / 12);
+            const x = cx + 96 * Math.sin(angle);
+            const y = cy - 96 * Math.cos(angle) + 8;
+            ctx.fillText(String(n), x, y);
+          }
+        } else {
+          ctx.fillText("12", cx, cy - 96);
+          ctx.fillText("3", cx + 94, cy - 2);
+          ctx.fillText("6", cx, cy + 82);
+          ctx.fillText("9", cx - 94, cy - 2);
+        }
       }
 
       // Tacche

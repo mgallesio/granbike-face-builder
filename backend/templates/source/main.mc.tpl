@@ -106,10 +106,26 @@ class MainView extends WatchUi.WatchFace {
     {{#SHOW_NUMBERS}}
     function drawNumbers(dc, cx, cy) {
         dc.setColor(Graphics.COLOR_{{ACCENT_COLOR}}, Graphics.COLOR_TRANSPARENT);
+        {{#SHOW_CARDINAL_NUMBERS}}
         dc.drawText(cx, cy - 96, Graphics.FONT_SMALL, "12", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(cx + 94, cy - 9, Graphics.FONT_SMALL, "3", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(cx, cy + 72, Graphics.FONT_SMALL, "6", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(cx - 94, cy - 9, Graphics.FONT_SMALL, "9", Graphics.TEXT_JUSTIFY_CENTER);
+        {{/SHOW_CARDINAL_NUMBERS}}
+        {{#SHOW_ALL_NUMBERS}}
+        dc.drawText(cx, cy - 96, Graphics.FONT_SMALL, "12", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 48, cy - 84, Graphics.FONT_SMALL, "1", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 83, cy - 50, Graphics.FONT_SMALL, "2", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 96, cy - 9, Graphics.FONT_SMALL, "3", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 83, cy + 32, Graphics.FONT_SMALL, "4", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 48, cy + 65, Graphics.FONT_SMALL, "5", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, cy + 78, Graphics.FONT_SMALL, "6", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 48, cy + 65, Graphics.FONT_SMALL, "7", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 83, cy + 32, Graphics.FONT_SMALL, "8", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 96, cy - 9, Graphics.FONT_SMALL, "9", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 83, cy - 50, Graphics.FONT_SMALL, "10", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 48, cy - 84, Graphics.FONT_SMALL, "11", Graphics.TEXT_JUSTIFY_CENTER);
+        {{/SHOW_ALL_NUMBERS}}
     }
     {{/SHOW_NUMBERS}}
 
