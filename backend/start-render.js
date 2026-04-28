@@ -24,7 +24,9 @@ if (sdkZipUrl && !process.env.SDK_PATH) {
   const zipPath = path.join(TMP_DIR, "connectiq-sdk.zip");
   await download(sdkZipUrl, zipPath);
   await exec("unzip", ["-q", "-o", zipPath, "-d", SDK_DIR]);
-  process.env.SDK_PATH = await findSdkRoot(SDK_DIR);
+  const jarPath = await findMonkeybrainsJar(SDK_DIR);
+  process.env.MONKEYBRAINS_JAR = jarPath;
+  process.env.SDK_PATH = path.dirname(path.dirname(jarPath));
 }
 
 await import("./server.js");
@@ -59,24 +61,17 @@ function exec(file, args) {
   });
 }
 
-async function findSdkRoot(root) {
+async function findMonkeybrainsJar(root) {
   const entries = await fs.readdir(root, { withFileTypes: true });
   for (const entry of entries) {
     const fullPath = path.join(root, entry.name);
+    if (entry.isFile() && entry.name === "monkeybrains.jar") {
+      return fullPath;
+    }
     if (entry.isDirectory()) {
-      if (await hasMonkeybrains(fullPath)) return fullPath;
-      const found = await findSdkRoot(fullPath).catch(() => null);
+      const found = await findMonkeybrainsJar(fullPath).catch(() => null);
       if (found) return found;
     }
   }
-  throw new Error("SDK Connect IQ non trovato nello zip: manca bin/monkeybrains.jar");
-}
-
-async function hasMonkeybrains(dir) {
-  try {
-    await fs.access(path.join(dir, "bin", "monkeybrains.jar"));
-    return true;
-  } catch {
-    return false;
-  }
+  throw new Error("SDK Connect IQ non trovato nello zip: manca monkeybrains.jar");
 }

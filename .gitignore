@@ -2,6 +2,7 @@ node_modules/
 dist/
 tmp/
 tmp_*.png
+garmin-sdk-test.zip
 *.log
 localtunnel.out
 localtunnel.err

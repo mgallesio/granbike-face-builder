@@ -227,7 +227,7 @@ export async function buildFace(config, photoPath, tmpBase) {
   if (!SDK) throw new Error("SDK_PATH non configurato in .env");
   if (!KEY) throw new Error("DEVELOPER_KEY_PATH non configurato in .env");
 
-  const JAR = path.join(SDK, "bin", "monkeybrains.jar");
+  const JAR = process.env.MONKEYBRAINS_JAR || path.join(SDK, "bin", "monkeybrains.jar");
   const prgPath = path.join(buildDir, "out.prg");
 
   await new Promise((resolve, reject) => {
