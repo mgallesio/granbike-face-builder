@@ -103,26 +103,22 @@ export async function createLogoSquadraAsset(dst = null, options = {}) {
     const g = data[i + 1];
     const b = data[i + 2];
     if (logoName === "logosquadra2") {
-      if (r < 18 && g < 18 && b < 18) {
+      if (r < 48 && g < 48 && b < 48) {
         data[i + 3] = 0;
-      } else if (r < 35 && g < 35 && b < 35) {
-        data[i + 3] = Math.min(data[i + 3], 80);
+      } else if (r < 75 && g < 75 && b < 75) {
+        data[i + 3] = Math.min(data[i + 3], 35);
       }
     } else {
-      if (r > 238 && g > 238 && b > 238) {
+      if (r > 232 && g > 232 && b > 232) {
         data[i + 3] = 0;
-      } else if (r > 225 && g > 225 && b > 225) {
-        data[i + 3] = Math.min(data[i + 3], 70);
-      } else if (r < 135 && g < 135 && b < 135) {
-        data[i] = 245;
-        data[i + 1] = 245;
-        data[i + 2] = 245;
+      } else if (r > 205 && g > 205 && b > 205) {
+        data[i + 3] = Math.min(data[i + 3], 35);
       }
     }
   }
 
   const png = await sharp(data, { raw: info })
-    .png({ palette: true, colors: 64, compressionLevel: 9 })
+    .png({ palette: false, compressionLevel: 9 })
     .toBuffer();
 
   if (dst) await fs.writeFile(dst, png);
