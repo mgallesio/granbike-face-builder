@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: granbike-face-builder
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TMP_DIR
+        value: /tmp/granbike-face-builder
+      - key: JAVA_PATH
+        value: java
+      # Optional, only needed if you want PRG generation on Render.
+      # Put a private zip URL containing the Connect IQ SDK folder.
+      - key: CONNECTIQ_SDK_ZIP_URL
+        sync: false
+      # Optional, only needed if you want PRG generation on Render.
+      # Base64 of developer_key.der.
+      - key: DEVELOPER_KEY_DER_BASE64
+        sync: false
