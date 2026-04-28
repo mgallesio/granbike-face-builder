@@ -76,18 +76,20 @@ export default function WatchPreview({ config, photoUrl }) {
         ctx.font = "bold 20px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        const numberRadius = config.showHands === false ? 112 : 96;
+        const yAdjust = config.showHands === false ? 8 : 8;
         if (config.numbersMode === "all") {
           for (let n = 1; n <= 12; n += 1) {
             const angle = n * (2 * Math.PI / 12);
-            const x = cx + 96 * Math.sin(angle);
-            const y = cy - 96 * Math.cos(angle) + 8;
+            const x = cx + numberRadius * Math.sin(angle);
+            const y = cy - numberRadius * Math.cos(angle) + yAdjust;
             ctx.fillText(String(n), x, y);
           }
         } else {
-          ctx.fillText("12", cx, cy - 96);
-          ctx.fillText("3", cx + 94, cy - 2);
-          ctx.fillText("6", cx, cy + 82);
-          ctx.fillText("9", cx - 94, cy - 2);
+          ctx.fillText("12", cx, cy - numberRadius);
+          ctx.fillText("3", cx + numberRadius, cy - 2);
+          ctx.fillText("6", cx, cy + numberRadius - 14);
+          ctx.fillText("9", cx - numberRadius, cy - 2);
         }
       }
 
@@ -159,17 +161,21 @@ export default function WatchPreview({ config, photoUrl }) {
       const minA  = (min + sec / 60) * (2 * Math.PI / 60);
       const secA  = sec * (2 * Math.PI / 60);
 
-      drawHand(ctx, cx, cy, hourA, 55, 6, accent);
-      drawHand(ctx, cx, cy, minA,  95, 4, accent);
+      if (config.showHands !== false) {
+        drawHand(ctx, cx, cy, hourA, 55, 6, accent);
+        drawHand(ctx, cx, cy, minA,  95, 4, accent);
+      }
       if (config.showSeconds) {
         drawHand(ctx, cx, cy, secA, 105, 2, secondCol);
       }
 
       // Perno
-      ctx.fillStyle = accent;
-      ctx.beginPath(); ctx.arc(cx, cy, 6, 0, 2 * Math.PI); ctx.fill();
-      ctx.fillStyle = background;
-      ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2 * Math.PI); ctx.fill();
+      if (config.showHands !== false) {
+        ctx.fillStyle = accent;
+        ctx.beginPath(); ctx.arc(cx, cy, 6, 0, 2 * Math.PI); ctx.fill();
+        ctx.fillStyle = background;
+        ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2 * Math.PI); ctx.fill();
+      }
 
       raf = requestAnimationFrame(render);
     };

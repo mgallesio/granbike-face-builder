@@ -37,6 +37,7 @@ export default function App() {
     logoName: "logosquadra",
     showHr: true,
     showBattery: true,
+    showHands: true,
     showSeconds: true,
     showTicks: true,
     showNumbers: true,
@@ -231,6 +232,9 @@ export default function App() {
           <h2>Elementi</h2>
           <Toggle checked={config.showTicks} onChange={(value) => update("showTicks", value)}>
             Tacche orarie 12/3/6/9
+          </Toggle>
+          <Toggle checked={config.showHands} onChange={(value) => update("showHands", value)}>
+            Lancette ore/minuti
           </Toggle>
           <div className="field">
             <label>Numeri</label>

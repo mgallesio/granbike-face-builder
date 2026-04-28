@@ -106,6 +106,7 @@ class MainView extends WatchUi.WatchFace {
     {{#SHOW_NUMBERS}}
     function drawNumbers(dc, cx, cy) {
         dc.setColor(Graphics.COLOR_{{ACCENT_COLOR}}, Graphics.COLOR_TRANSPARENT);
+        {{#SHOW_HANDS}}
         {{#SHOW_CARDINAL_NUMBERS}}
         dc.drawText(cx, cy - 96, Graphics.FONT_SMALL, "12", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(cx + 94, cy - 9, Graphics.FONT_SMALL, "3", Graphics.TEXT_JUSTIFY_CENTER);
@@ -126,6 +127,29 @@ class MainView extends WatchUi.WatchFace {
         dc.drawText(cx - 83, cy - 50, Graphics.FONT_SMALL, "10", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(cx - 48, cy - 84, Graphics.FONT_SMALL, "11", Graphics.TEXT_JUSTIFY_CENTER);
         {{/SHOW_ALL_NUMBERS}}
+        {{/SHOW_HANDS}}
+        {{^SHOW_HANDS}}
+        {{#SHOW_CARDINAL_NUMBERS}}
+        dc.drawText(cx, cy - 112, Graphics.FONT_SMALL, "12", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 112, cy - 9, Graphics.FONT_SMALL, "3", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, cy + 96, Graphics.FONT_SMALL, "6", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 112, cy - 9, Graphics.FONT_SMALL, "9", Graphics.TEXT_JUSTIFY_CENTER);
+        {{/SHOW_CARDINAL_NUMBERS}}
+        {{#SHOW_ALL_NUMBERS}}
+        dc.drawText(cx, cy - 112, Graphics.FONT_SMALL, "12", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 56, cy - 98, Graphics.FONT_SMALL, "1", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 98, cy - 58, Graphics.FONT_SMALL, "2", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 112, cy - 9, Graphics.FONT_SMALL, "3", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 98, cy + 40, Graphics.FONT_SMALL, "4", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 56, cy + 80, Graphics.FONT_SMALL, "5", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, cy + 96, Graphics.FONT_SMALL, "6", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 56, cy + 80, Graphics.FONT_SMALL, "7", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 98, cy + 40, Graphics.FONT_SMALL, "8", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 112, cy - 9, Graphics.FONT_SMALL, "9", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 98, cy - 58, Graphics.FONT_SMALL, "10", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 56, cy - 98, Graphics.FONT_SMALL, "11", Graphics.TEXT_JUSTIFY_CENTER);
+        {{/SHOW_ALL_NUMBERS}}
+        {{/SHOW_HANDS}}
     }
     {{/SHOW_NUMBERS}}
 
@@ -178,17 +202,21 @@ class MainView extends WatchUi.WatchFace {
         var hourAngle = (hour + min / 60.0) * (twoPi / 12);
         var minAngle  = min * (twoPi / 60);
 
+        {{#SHOW_HANDS}}
         drawHand(dc, cx, cy, hourAngle, 55, 6, Graphics.COLOR_{{ACCENT_COLOR}});
         drawHand(dc, cx, cy, minAngle,  95, 4, Graphics.COLOR_{{ACCENT_COLOR}});
+        {{/SHOW_HANDS}}
         {{#SHOW_SECONDS}}
         var secAngle = now.sec * (twoPi / 60);
         drawHand(dc, cx, cy, secAngle, 105, 2, Graphics.COLOR_{{SECOND_HAND_COLOR}});
         {{/SHOW_SECONDS}}
 
+        {{#SHOW_HANDS}}
         dc.setColor(Graphics.COLOR_{{ACCENT_COLOR}}, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(cx, cy, 6);
         dc.setColor(Graphics.COLOR_{{BACKGROUND_COLOR}}, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(cx, cy, 3);
+        {{/SHOW_HANDS}}
     }
 
     function drawHand(dc, cx, cy, angle, length, width, color) {

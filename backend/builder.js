@@ -159,6 +159,7 @@ export async function buildFace(config, photoPath, tmpBase) {
     SHOW_HR: !!config.showHr,
     SHOW_BATTERY: !!config.showBattery,
     SHOW_SECONDS: !!config.showSeconds,
+    SHOW_HANDS: config.showHands !== false,
     SHOW_TICKS: config.showTicks !== false, // default true
     SHOW_NUMBERS: numbersMode !== "none",
     SHOW_CARDINAL_NUMBERS: numbersMode === "cardinal",
