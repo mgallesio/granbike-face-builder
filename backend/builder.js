@@ -138,6 +138,10 @@ function safeScale(n, fallback = 100) {
   return safeNumber(n, fallback, 25, 180);
 }
 
+function safeLogoScale(n, fallback = 100) {
+  return safeNumber(n, fallback, 40, 180);
+}
+
 /**
  * Costruisce una watch face .prg a partire da una configurazione utente.
  * @param {object} config { name, accentColor, secondHandColor, showHr, showBattery, showSeconds, showTicks, memorialLine1, memorialLine2, device }
@@ -170,6 +174,10 @@ export async function buildFace(config, photoPath, tmpBase) {
     TEXT2_Y: safeNumber(config.text2Y, 152),
     LOGO_X: safeNumber(config.logoX, 130),
     LOGO_Y: safeNumber(config.logoY, 192),
+    LOGO_SCALE: safeLogoScale(config.logoScale, 100),
+    LOGO_WIDTH: Math.round(160 * safeLogoScale(config.logoScale, 100) / 100),
+    LOGO_HEIGHT: Math.round(62 * safeLogoScale(config.logoScale, 100) / 100),
+    LOGO_HALF_WIDTH: Math.round(80 * safeLogoScale(config.logoScale, 100) / 100),
     PHOTO_SCALE: safeScale(config.photoScale, 100),
     HAS_PHOTO: !!photoPath,
     MEMORIAL_LINE1: safeText(config.memorialLine1),
@@ -227,7 +235,11 @@ export async function buildFace(config, photoPath, tmpBase) {
 
   await createLogoSquadraAsset(
     path.join(buildDir, "resources", "drawables", "logosquadra.png"),
-    { logoName }
+    {
+      logoName,
+      width: Math.round(160 * safeLogoScale(config.logoScale, 100) / 100),
+      height: Math.round(62 * safeLogoScale(config.logoScale, 100) / 100),
+    }
   );
 
   // Processa foto (se presente)

@@ -62,12 +62,15 @@ export default function WatchPreview({ config, photoUrl }) {
       }
 
       if (logosquadraRef.current) {
+        const logoScale = (config.logoScale ?? 100) / 100;
+        const logoW = 160 * logoScale;
+        const logoH = 62 * logoScale;
         ctx.drawImage(
           logosquadraRef.current,
-          (config.logoX ?? 130) - 80,
+          (config.logoX ?? 130) - logoW / 2,
           config.logoY ?? 192,
-          160,
-          62
+          logoW,
+          logoH
         );
       }
 

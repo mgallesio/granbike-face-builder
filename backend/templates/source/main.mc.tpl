@@ -98,7 +98,7 @@ class MainView extends WatchUi.WatchFace {
     }
 
     function drawLogoSquadra(dc) {
-        var x = {{LOGO_X}} - 80;
+        var x = {{LOGO_X}} - {{LOGO_HALF_WIDTH}};
         var y = {{LOGO_Y}};
         dc.drawBitmap(x, y, _logosquadra);
     }

@@ -52,6 +52,7 @@ export default function App() {
     text2Y: 152,
     logoX: 130,
     logoY: 192,
+    logoScale: 100,
     photoScale: 100,
     memorialLine1: "",
     memorialLine2: "",
@@ -298,6 +299,13 @@ export default function App() {
             onX={(value) => update("logoX", value)}
             onY={(value) => update("logoY", value)}
           />
+          <ScaleControl
+            label="Dimensione logo"
+            value={config.logoScale}
+            min={40}
+            max={180}
+            onChange={(value) => update("logoScale", value)}
+          />
         </section>
 
         <section className="panel">
@@ -328,19 +336,13 @@ export default function App() {
           <h2>Foto</h2>
           <input type="file" accept="image/*" onChange={onPhotoChange} />
           {photoFile && (
-            <div className="scale-control">
-              <div className="position-title">
-                <span>Dimensione foto</span>
-                <code>{config.photoScale}%</code>
-              </div>
-              <input
-                type="range"
-                min="25"
-                max="180"
-                value={config.photoScale}
-                onChange={(e) => update("photoScale", Number(e.target.value))}
-              />
-            </div>
+            <ScaleControl
+              label="Dimensione foto"
+              value={config.photoScale}
+              min={25}
+              max={180}
+              onChange={(value) => update("photoScale", value)}
+            />
           )}
           {photoFile && (
             <button className="secondary-btn" onClick={clearPhoto} type="button">
@@ -433,6 +435,24 @@ function PositionControl({ label, x, y, onX, onY }) {
           onChange={(e) => onY(Number(e.target.value))}
         />
       </label>
+    </div>
+  );
+}
+
+function ScaleControl({ label, value, min, max, onChange }) {
+  return (
+    <div className="scale-control">
+      <div className="position-title">
+        <span>{label}</span>
+        <code>{value}%</code>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
     </div>
   );
 }
