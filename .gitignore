@@ -3,6 +3,8 @@ dist/
 tmp/
 tmp_*.png
 *.log
+localtunnel.out
+localtunnel.err
 .env
 backend/keys/*.der
 backend/keys/*.pem
