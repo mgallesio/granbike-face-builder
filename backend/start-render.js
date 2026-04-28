@@ -7,6 +7,8 @@ import { get } from "https";
 const TMP_DIR = process.env.TMP_DIR || "/tmp/granbike-face-builder";
 const SDK_DIR = path.join(TMP_DIR, "connectiq-sdk");
 const KEY_PATH = path.join(TMP_DIR, "developer_key.der");
+const DEFAULT_SDK_ZIP_URL =
+  "https://developer.garmin.com/downloads/connect-iq/sdks/connectiq-sdk-lin-9.1.0-2026-03-09-6a872a80b.zip";
 
 await fs.mkdir(TMP_DIR, { recursive: true });
 
@@ -15,10 +17,12 @@ if (process.env.DEVELOPER_KEY_DER_BASE64 && !process.env.DEVELOPER_KEY_PATH) {
   process.env.DEVELOPER_KEY_PATH = KEY_PATH;
 }
 
-if (process.env.CONNECTIQ_SDK_ZIP_URL && !process.env.SDK_PATH) {
+const sdkZipUrl = process.env.CONNECTIQ_SDK_ZIP_URL || DEFAULT_SDK_ZIP_URL;
+
+if (sdkZipUrl && !process.env.SDK_PATH) {
   await fs.mkdir(SDK_DIR, { recursive: true });
   const zipPath = path.join(TMP_DIR, "connectiq-sdk.zip");
-  await download(process.env.CONNECTIQ_SDK_ZIP_URL, zipPath);
+  await download(sdkZipUrl, zipPath);
   await exec("unzip", ["-q", "-o", zipPath, "-d", SDK_DIR]);
   process.env.SDK_PATH = await findSdkRoot(SDK_DIR);
 }

@@ -25,10 +25,16 @@ app.use(express.json({ limit: "1mb" }));
 
 // Health check
 app.get("/api/health", (req, res) => {
+  const hasSdk = Boolean(process.env.SDK_PATH);
+  const hasKey = Boolean(process.env.DEVELOPER_KEY_PATH);
   res.json({
     status: "ok",
     time: new Date().toISOString(),
-    buildReady: Boolean(process.env.SDK_PATH && process.env.DEVELOPER_KEY_PATH),
+    buildReady: hasSdk && hasKey,
+    buildConfig: {
+      sdk: hasSdk,
+      developerKey: hasKey,
+    },
   });
 });
 
