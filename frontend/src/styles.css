@@ -343,6 +343,16 @@ canvas {
   gap: 12px;
 }
 
+.logo-library-panel {
+  margin-top: 14px;
+}
+
+.logo-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
 .team-card {
   display: grid;
   grid-template-columns: minmax(160px, 1fr) minmax(220px, 1.4fr) 96px auto;
@@ -352,6 +362,39 @@ canvas {
   border: 1px solid #33363d;
   border-radius: 8px;
   background: #101113;
+}
+
+.logo-card {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #33363d;
+  border-radius: 8px;
+  background: #101113;
+}
+
+.logo-card img {
+  width: 72px;
+  height: 40px;
+  object-fit: contain;
+  background: #000;
+  border-radius: 4px;
+}
+
+.logo-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.logo-card strong {
+  color: #f2f2f0;
+}
+
+.logo-card span {
+  color: #b8b8b4;
+  font-size: 13px;
 }
 
 .team-card div {

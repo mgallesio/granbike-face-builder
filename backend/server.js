@@ -5,7 +5,7 @@ import path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
 import { buildFace, buildStorePackage, createLogoSquadraAsset } from "./builder.js";
-import { createTeamStore, publicTeam } from "./teamStore.js";
+import { createTeamStore, publicLogo, publicTeam } from "./teamStore.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -82,6 +82,45 @@ app.get("/api/teams/:slug/logo", async (req, res) => {
     res.type("png").send(png);
   } catch (e) {
     res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
+app.get("/api/logos", async (req, res) => {
+  const logos = await teamStore.listLogos();
+  res.json(logos.map(publicLogo));
+});
+
+app.get("/api/logos/:id/image", async (req, res) => {
+  try {
+    const logoPath = await teamStore.getNamedLogoPath(req.params.id);
+    if (!logoPath) return res.status(404).json({ error: "Logo non trovato" });
+    const png = await createLogoSquadraAsset(null, {
+      width: 320,
+      height: 124,
+      sourcePath: logoPath,
+      trimBackground: "#ffffff",
+    });
+    res.setHeader("Cache-Control", "no-store");
+    res.type("png").send(png);
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
+app.post("/api/admin/logos", requireAdmin, upload.single("logo"), async (req, res) => {
+  try {
+    const logo = await teamStore.saveLogo(
+      {
+        ...req.body,
+        logoOriginalName: req.file?.originalname,
+      },
+      req.file?.path || null
+    );
+    if (req.file?.path) await cleanupUpload(req.file.path);
+    res.json(publicLogo(logo));
+  } catch (e) {
+    if (req.file?.path) await cleanupUpload(req.file.path);
+    res.status(400).json({ error: String(e.message || e) });
   }
 });
 

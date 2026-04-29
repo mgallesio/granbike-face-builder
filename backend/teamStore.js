@@ -2,19 +2,18 @@ import fs from "fs/promises";
 import path from "path";
 
 const TEAM_SLUG_RE = /^[a-z0-9-]{2,40}$/;
+const LOGO_ID_RE = /^[a-z0-9-]{2,40}$/;
 
 export function createTeamStore(baseDir) {
   const dataDir = path.join(baseDir, "data");
   const logoDir = path.join(dataDir, "logos");
   const teamsPath = path.join(dataDir, "teams.json");
+  const logosPath = path.join(dataDir, "logos.json");
 
   async function ensureReady() {
     await fs.mkdir(logoDir, { recursive: true });
-    try {
-      await fs.access(teamsPath);
-    } catch {
-      await fs.writeFile(teamsPath, "[]\n", "utf8");
-    }
+    await ensureJsonFile(teamsPath);
+    await ensureJsonFile(logosPath);
   }
 
   async function listTeams() {
@@ -35,11 +34,18 @@ export function createTeamStore(baseDir) {
     if (!slug) throw new Error("Slug squadra non valido");
 
     const teams = await readTeams();
+    const logos = await readLogos();
     const now = new Date().toISOString();
     const existing = teams.find((team) => team.slug === slug);
+    const selectedLogoId = safeLogoId(input.logoId);
+    const selectedLogo = selectedLogoId
+      ? logos.find((logo) => logo.id === selectedLogoId)
+      : null;
     const logoFileName = logoUploadPath
       ? `${slug}${path.extname(input.logoOriginalName || ".png").toLowerCase() || ".png"}`
-      : existing?.logoFileName || null;
+      : selectedLogo?.fileName
+        ? null
+        : existing?.logoFileName || null;
 
     if (logoUploadPath && logoFileName) {
       await fs.copyFile(logoUploadPath, path.join(logoDir, logoFileName));
@@ -51,6 +57,7 @@ export function createTeamStore(baseDir) {
       prgFileName: safeFileName(input.prgFileName || existing?.prgFileName || slug),
       backgroundColor: safeText(input.backgroundColor, 20) || existing?.backgroundColor || "BLACK",
       accentColor: safeText(input.accentColor, 20) || existing?.accentColor || "YELLOW",
+      logoId: selectedLogo?.id || null,
       logoFileName,
       updatedAt: now,
       createdAt: existing?.createdAt || now,
@@ -63,9 +70,63 @@ export function createTeamStore(baseDir) {
     return team;
   }
 
+  async function listLogos() {
+    await ensureReady();
+    return readLogos();
+  }
+
+  async function getLogo(id) {
+    const cleanId = safeLogoId(id);
+    if (!cleanId) return null;
+    const logos = await readLogos();
+    return logos.find((logo) => logo.id === cleanId) || null;
+  }
+
+  async function saveLogo(input, logoUploadPath) {
+    await ensureReady();
+    if (!logoUploadPath) throw new Error("Logo non caricato");
+    const id = safeLogoId(input.id || slugify(input.name));
+    if (!id) throw new Error("Nome logo non valido");
+
+    const logos = await readLogos();
+    const now = new Date().toISOString();
+    const existing = logos.find((logo) => logo.id === id);
+    const ext = path.extname(input.logoOriginalName || ".png").toLowerCase() || ".png";
+    const fileName = `library-${id}${ext}`;
+    await fs.copyFile(logoUploadPath, path.join(logoDir, fileName));
+
+    const logo = {
+      id,
+      name: safeText(input.name, 60) || existing?.name || id,
+      fileName,
+      updatedAt: now,
+      createdAt: existing?.createdAt || now,
+    };
+
+    const next = existing
+      ? logos.map((item) => (item.id === id ? logo : item))
+      : [...logos, logo];
+    await writeLogos(next);
+    return logo;
+  }
+
+  async function getNamedLogoPath(id) {
+    const logo = await getLogo(id);
+    if (!logo?.fileName) return null;
+    return getLogoFilePath(logo.fileName);
+  }
+
   async function getLogoPath(team) {
+    if (team?.logoId) {
+      const namedLogoPath = await getNamedLogoPath(team.logoId);
+      if (namedLogoPath) return namedLogoPath;
+    }
     if (!team?.logoFileName) return null;
-    const logoPath = path.join(logoDir, team.logoFileName);
+    return getLogoFilePath(team.logoFileName);
+  }
+
+  async function getLogoFilePath(fileName) {
+    const logoPath = path.join(logoDir, fileName);
     try {
       await fs.access(logoPath);
       return logoPath;
@@ -76,7 +137,16 @@ export function createTeamStore(baseDir) {
 
   async function readTeams() {
     await ensureReady();
-    const raw = await fs.readFile(teamsPath, "utf8");
+    return readJson(teamsPath);
+  }
+
+  async function readLogos() {
+    await ensureReady();
+    return readJson(logosPath);
+  }
+
+  async function readJson(filePath) {
+    const raw = await fs.readFile(filePath, "utf8");
     try {
       return JSON.parse(raw);
     } catch {
@@ -88,10 +158,26 @@ export function createTeamStore(baseDir) {
     await fs.writeFile(teamsPath, `${JSON.stringify(teams, null, 2)}\n`, "utf8");
   }
 
+  async function writeLogos(logos) {
+    await fs.writeFile(logosPath, `${JSON.stringify(logos, null, 2)}\n`, "utf8");
+  }
+
+  async function ensureJsonFile(filePath) {
+    try {
+      await fs.access(filePath);
+    } catch {
+      await fs.writeFile(filePath, "[]\n", "utf8");
+    }
+  }
+
   return {
     listTeams,
     getTeam,
     saveTeam,
+    listLogos,
+    getLogo,
+    saveLogo,
+    getNamedLogoPath,
     getLogoPath,
   };
 }
@@ -104,9 +190,20 @@ export function publicTeam(team) {
     prgFileName: team.prgFileName,
     backgroundColor: team.backgroundColor,
     accentColor: team.accentColor,
-    hasLogo: Boolean(team.logoFileName),
+    logoId: team.logoId || "",
+    hasLogo: Boolean(team.logoId || team.logoFileName),
     updatedAt: team.updatedAt,
     createdAt: team.createdAt,
+  };
+}
+
+export function publicLogo(logo) {
+  if (!logo) return null;
+  return {
+    id: logo.id,
+    name: logo.name,
+    updatedAt: logo.updatedAt,
+    createdAt: logo.createdAt,
   };
 }
 
@@ -123,6 +220,11 @@ function slugify(value) {
 function safeSlug(value) {
   const slug = slugify(value);
   return TEAM_SLUG_RE.test(slug) ? slug : "";
+}
+
+function safeLogoId(value) {
+  const id = slugify(value);
+  return LOGO_ID_RE.test(id) ? id : "";
 }
 
 function safeText(value, max) {

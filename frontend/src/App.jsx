@@ -534,24 +534,36 @@ function BuilderApp({ route }) {
 function AdminApp() {
   const [password, setPassword] = useState(() => sessionStorage.getItem("adminPassword") || "");
   const [teams, setTeams] = useState([]);
+  const [logos, setLogos] = useState([]);
   const [form, setForm] = useState({
     name: "",
     slug: "",
     prgFileName: "",
+    logoId: "",
     backgroundColor: "BLACK",
     accentColor: "YELLOW",
   });
+  const [logoForm, setLogoForm] = useState({ name: "", id: "" });
   const [logoFile, setLogoFile] = useState(null);
+  const [libraryLogoFile, setLibraryLogoFile] = useState(null);
   const [status, setStatus] = useState({ msg: "", kind: "" });
+  const [logoStatus, setLogoStatus] = useState({ msg: "", kind: "" });
 
   useEffect(() => {
     loadTeams();
+    loadLogos();
   }, []);
 
   async function loadTeams() {
     const res = await fetch("/api/teams");
     const data = await res.json();
     setTeams(data);
+  }
+
+  async function loadLogos() {
+    const res = await fetch("/api/logos");
+    const data = await res.json();
+    setLogos(data);
   }
 
   function updateForm(key, value) {
@@ -563,6 +575,7 @@ function AdminApp() {
       name: team.name,
       slug: team.slug,
       prgFileName: team.prgFileName,
+      logoId: team.logoId || "",
       backgroundColor: team.backgroundColor || "BLACK",
       accentColor: team.accentColor || "YELLOW",
     });
@@ -592,6 +605,7 @@ function AdminApp() {
         name: "",
         slug: "",
         prgFileName: "",
+        logoId: "",
         backgroundColor: "BLACK",
         accentColor: "YELLOW",
       });
@@ -599,6 +613,34 @@ function AdminApp() {
       await loadTeams();
     } catch (e) {
       setStatus({ msg: `Errore: ${e.message}`, kind: "error" });
+    }
+  }
+
+  async function saveNamedLogo(e) {
+    e.preventDefault();
+    setLogoStatus({ msg: "Salvataggio logo...", kind: "" });
+    try {
+      const fd = new FormData();
+      fd.append("name", logoForm.name);
+      fd.append("id", logoForm.id);
+      if (libraryLogoFile) fd.append("logo", libraryLogoFile);
+      sessionStorage.setItem("adminPassword", password);
+      const res = await fetch("/api/admin/logos", {
+        method: "POST",
+        body: fd,
+        headers: { "x-admin-password": password },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
+        throw new Error(err.error || res.statusText);
+      }
+      const logo = await res.json();
+      setLogoStatus({ msg: `Logo salvato: ${logo.name}`, kind: "ok" });
+      setLogoForm({ name: "", id: "" });
+      setLibraryLogoFile(null);
+      await loadLogos();
+    } catch (e) {
+      setLogoStatus({ msg: `Errore: ${e.message}`, kind: "error" });
     }
   }
 
@@ -636,13 +678,40 @@ function AdminApp() {
             <input value={form.prgFileName} onChange={(e) => updateForm("prgFileName", e.target.value)} placeholder="GranbikeTeamFace" />
           </div>
           <div className="field">
-            <label>Logo squadra</label>
+            <label>Logo salvato</label>
+            <select value={form.logoId} onChange={(e) => updateForm("logoId", e.target.value)}>
+              <option value="">Nessun logo salvato</option>
+              {logos.map((logo) => (
+                <option key={logo.id} value={logo.id}>{logo.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Logo squadra dedicato</label>
             <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
           </div>
           <ColorPicker label="Sfondo default" value={form.backgroundColor} onChange={(value) => updateForm("backgroundColor", value)} />
           <ColorPicker label="Colore default" value={form.accentColor} onChange={(value) => updateForm("accentColor", value)} />
           <button className="btn" type="submit">Salva squadra</button>
           <div className={`status ${status.kind}`}>{status.msg}</div>
+        </form>
+
+        <form className="panel" onSubmit={saveNamedLogo}>
+          <h2>Loghi salvati</h2>
+          <div className="field">
+            <label>Nome logo</label>
+            <input value={logoForm.name} onChange={(e) => setLogoForm((current) => ({ ...current, name: e.target.value }))} required />
+          </div>
+          <div className="field">
+            <label>Codice logo</label>
+            <input value={logoForm.id} onChange={(e) => setLogoForm((current) => ({ ...current, id: e.target.value }))} placeholder="logo-granbike" />
+          </div>
+          <div className="field">
+            <label>File logo</label>
+            <input type="file" accept="image/*" onChange={(e) => setLibraryLogoFile(e.target.files?.[0] || null)} required />
+          </div>
+          <button className="btn" type="submit">Salva logo</button>
+          <div className={`status ${logoStatus.kind}`}>{logoStatus.msg}</div>
         </form>
       </aside>
 
@@ -662,6 +731,21 @@ function AdminApp() {
                 <button className="secondary-btn" type="button" onClick={() => editTeam(team)}>
                   Modifica
                 </button>
+              </article>
+            ))}
+          </div>
+        </section>
+        <section className="panel logo-library-panel">
+          <h2>Archivio loghi</h2>
+          {logos.length === 0 && <p className="muted">Nessun logo salvato.</p>}
+          <div className="logo-list">
+            {logos.map((logo) => (
+              <article className="logo-card" key={logo.id}>
+                <img src={`/api/logos/${logo.id}/image`} alt="" />
+                <div>
+                  <strong>{logo.name}</strong>
+                  <span>{logo.id}</span>
+                </div>
               </article>
             ))}
           </div>
