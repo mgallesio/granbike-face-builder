@@ -361,22 +361,35 @@ async function prepareBuild(config, photoPath, tmpBase, options = {}) {
   // Processa foto (se presente)
   if (photoPath) {
     const dst = path.join(buildDir, "resources", "drawables", "photo.png");
-    const photoScale = safeScale(config.photoScale, 100) / 100;
-    const photoSize = Math.round(260 * photoScale);
-    await sharp(photoPath)
-      .resize(photoSize, photoSize, { fit: "cover", position: "centre" })
-      .extend({
-        top: Math.floor((260 - photoSize) / 2),
-        bottom: Math.ceil((260 - photoSize) / 2),
-        left: Math.floor((260 - photoSize) / 2),
-        right: Math.ceil((260 - photoSize) / 2),
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      })
-      .png({ palette: true, colors: 64, compressionLevel: 9 })
-      .toFile(dst);
+    await createPhotoAsset(photoPath, dst, safeScale(config.photoScale, 100));
   }
 
   return { buildDir, device };
+}
+
+async function createPhotoAsset(photoPath, dst, scalePercent) {
+  const faceSize = 260;
+  const photoSize = Math.max(1, Math.round(faceSize * (scalePercent / 100)));
+  let image = sharp(photoPath)
+    .resize(photoSize, photoSize, { fit: "cover", position: "centre" });
+
+  if (photoSize >= faceSize) {
+    const offset = Math.floor((photoSize - faceSize) / 2);
+    image = image.extract({ left: offset, top: offset, width: faceSize, height: faceSize });
+  } else {
+    const pad = faceSize - photoSize;
+    image = image.extend({
+      top: Math.floor(pad / 2),
+      bottom: Math.ceil(pad / 2),
+      left: Math.floor(pad / 2),
+      right: Math.ceil(pad / 2),
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    });
+  }
+
+  await image
+    .png({ palette: true, colors: 64, compressionLevel: 9 })
+    .toFile(dst);
 }
 
 async function runMonkeyCompiler(javaPath, jarPath, args, timeout = 60000) {
