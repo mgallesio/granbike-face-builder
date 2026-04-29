@@ -36,7 +36,9 @@ export default function WatchPreview({ config, photoUrl }) {
 
   useEffect(() => {
     const img = new Image();
+    logosquadraRef.current = null;
     img.onload = () => { logosquadraRef.current = img; };
+    img.onerror = () => { logosquadraRef.current = null; };
     if (config.teamSlug) {
       img.src = `/api/teams/${encodeURIComponent(config.teamSlug)}/logo?t=${Date.now()}`;
     } else {

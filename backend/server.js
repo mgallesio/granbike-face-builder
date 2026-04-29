@@ -249,7 +249,8 @@ async function applyTeamConfig(config) {
   config.logoName = "logosquadra";
   if (team.backgroundColor) config.backgroundColor = team.backgroundColor;
   if (team.accentColor) config.accentColor = team.accentColor;
-  if (logoPath) config.teamLogoPath = logoPath;
+  if (!logoPath) throw new Error(`Logo non configurato per la squadra ${team.name}`);
+  config.teamLogoPath = logoPath;
 }
 
 async function cleanupUpload(filePath) {
