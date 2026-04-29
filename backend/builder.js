@@ -61,7 +61,7 @@ function safeNumberMode(mode, showNumbers) {
 }
 
 function safeLogoName(name) {
-  return VALID_LOGOS.has(name) ? name : "logosquadra";
+  return VALID_LOGOS.has(name) ? name : "";
 }
 
 function safeText(s, max = 40) {
@@ -94,7 +94,7 @@ export async function createLogoSquadraAsset(dst = null, options = {}) {
   const width = options.width || 160;
   const height = options.height || 62;
   const logoName = safeLogoName(options.logoName);
-  const sourcePath = options.sourcePath || LOGO_SQUADRA_SOURCES[logoName];
+  const sourcePath = options.sourcePath || (logoName ? LOGO_SQUADRA_SOURCES[logoName] : null);
   const source = await fileExists(sourcePath)
     ? sourcePath
     : LOGO_SQUADRA_FALLBACK;
@@ -135,6 +135,17 @@ export async function createLogoSquadraAsset(dst = null, options = {}) {
 
   if (dst) await fs.writeFile(dst, png);
   return png;
+}
+
+async function createTransparentPng(dst, width, height) {
+  await sharp({
+    create: {
+      width,
+      height,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  }).png({ palette: false, compressionLevel: 9 }).toFile(dst);
 }
 
 async function fileExists(filePath) {
@@ -225,6 +236,7 @@ async function prepareBuild(config, photoPath, tmpBase, options = {}) {
   const numbersMode = safeNumberMode(config.numbersMode, config.showNumbers);
   const logoName = safeLogoName(config.logoName);
   const teamLogoPath = config.teamLogoPath || null;
+  const hasLogo = Boolean(teamLogoPath || logoName);
   // Validazione / sanificazione
   const vars = {
     BACKGROUND_COLOR: safeColor(config.backgroundColor, "BLACK"),
@@ -331,16 +343,20 @@ async function prepareBuild(config, photoPath, tmpBase, options = {}) {
   );
   await fs.unlink(drwTplPath);
 
-  await createLogoSquadraAsset(
-    path.join(buildDir, "resources", "drawables", "logosquadra.png"),
-    {
-      logoName,
-      sourcePath: teamLogoPath,
-      trimBackground: teamLogoPath ? "#ffffff" : undefined,
-      width: Math.round(160 * safeLogoScale(config.logoScale, 100) / 100),
-      height: Math.round(62 * safeLogoScale(config.logoScale, 100) / 100),
-    }
-  );
+  if (hasLogo) {
+    await createLogoSquadraAsset(
+      path.join(buildDir, "resources", "drawables", "logosquadra.png"),
+      {
+        logoName,
+        sourcePath: teamLogoPath,
+        trimBackground: teamLogoPath ? "#ffffff" : undefined,
+        width: Math.round(160 * safeLogoScale(config.logoScale, 100) / 100),
+        height: Math.round(62 * safeLogoScale(config.logoScale, 100) / 100),
+      }
+    );
+  } else {
+    await createTransparentPng(path.join(buildDir, "resources", "drawables", "logosquadra.png"), 1, 1);
+  }
 
   // Processa foto (se presente)
   if (photoPath) {

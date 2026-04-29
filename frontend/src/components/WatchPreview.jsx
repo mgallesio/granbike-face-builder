@@ -41,8 +41,8 @@ export default function WatchPreview({ config, photoUrl }) {
     img.onerror = () => { logosquadraRef.current = null; };
     if (config.teamSlug) {
       img.src = `/api/teams/${encodeURIComponent(config.teamSlug)}/logo?t=${Date.now()}`;
-    } else {
-      img.src = `/api/logosquadra?logo=${encodeURIComponent(config.logoName || "logosquadra")}&t=${Date.now()}`;
+    } else if (config.logoName) {
+      img.src = `/api/logosquadra?logo=${encodeURIComponent(config.logoName)}&t=${Date.now()}`;
     }
   }, [config.logoName, config.teamSlug, config.logoCacheKey]);
 

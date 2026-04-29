@@ -35,7 +35,7 @@ const DEFAULT_CONFIG = {
   backgroundColor: "BLACK",
   accentColor: "YELLOW",
   secondHandColor: "WHITE",
-  logoName: "logosquadra",
+  logoName: "",
   showHr: true,
   showBattery: true,
   showHands: true,
@@ -149,7 +149,6 @@ function BuilderApp({ route }) {
           name: data.name,
           prgFileName: data.prgFileName,
           teamSlug: data.slug,
-          logoName: "logosquadra",
           backgroundColor: data.backgroundColor || current.backgroundColor,
           accentColor: data.accentColor || current.accentColor,
         }));
@@ -410,6 +409,7 @@ function BuilderApp({ route }) {
               value={config.logoName}
               onChange={(e) => update("logoName", e.target.value)}
             >
+              <option value="">Nessun logo</option>
               <option value="logosquadra">Logo squadra</option>
               <option value="logosquadra2">Logo squadra 2</option>
             </select>
