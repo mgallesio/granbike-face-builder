@@ -94,11 +94,11 @@ export async function createLogoSquadraAsset(dst = null, options = {}) {
   const width = options.width || 160;
   const height = options.height || 62;
   const logoName = safeLogoName(options.logoName);
-  const sourcePath = LOGO_SQUADRA_SOURCES[logoName];
+  const sourcePath = options.sourcePath || LOGO_SQUADRA_SOURCES[logoName];
   const source = await fileExists(sourcePath)
     ? sourcePath
     : LOGO_SQUADRA_FALLBACK;
-  const trimBackground = logoName === "logosquadra2" ? "#000000" : "#ffffff";
+  const trimBackground = options.trimBackground || (logoName === "logosquadra2" ? "#000000" : "#ffffff");
 
   const { data, info } = await sharp(source)
     .trim({ background: trimBackground, threshold: 25 })
@@ -114,7 +114,7 @@ export async function createLogoSquadraAsset(dst = null, options = {}) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
-    if (logoName === "logosquadra2") {
+    if (trimBackground === "#000000") {
       if (r < 48 && g < 48 && b < 48) {
         data[i + 3] = 0;
       } else if (r < 75 && g < 75 && b < 75) {
@@ -224,6 +224,7 @@ export async function buildStorePackage(config, photoPath, tmpBase) {
 async function prepareBuild(config, photoPath, tmpBase, options = {}) {
   const numbersMode = safeNumberMode(config.numbersMode, config.showNumbers);
   const logoName = safeLogoName(config.logoName);
+  const teamLogoPath = config.teamLogoPath || null;
   // Validazione / sanificazione
   const vars = {
     BACKGROUND_COLOR: safeColor(config.backgroundColor, "BLACK"),
@@ -334,6 +335,8 @@ async function prepareBuild(config, photoPath, tmpBase, options = {}) {
     path.join(buildDir, "resources", "drawables", "logosquadra.png"),
     {
       logoName,
+      sourcePath: teamLogoPath,
+      trimBackground: teamLogoPath ? "#ffffff" : undefined,
       width: Math.round(160 * safeLogoScale(config.logoScale, 100) / 100),
       height: Math.round(62 * safeLogoScale(config.logoScale, 100) / 100),
     }

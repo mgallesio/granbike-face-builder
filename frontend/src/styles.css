@@ -92,6 +92,7 @@ h1 {
 }
 
 .field input[type="text"],
+.field input[type="password"],
 .field select {
   width: 100%;
   min-height: 38px;
@@ -101,6 +102,11 @@ h1 {
   border-radius: 6px;
   color: #f2f2f0;
   font-size: 14px;
+}
+
+.field input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .field input[type="file"] {
@@ -303,6 +309,78 @@ canvas {
   line-height: 1.45;
 }
 
+.team-banner {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 10px 11px;
+  border: 1px solid #3c4048;
+  border-radius: 6px;
+  background: #101113;
+}
+
+.team-banner strong {
+  color: #ffd33d;
+}
+
+.team-banner span,
+.muted {
+  color: #b8b8b4;
+  font-size: 13px;
+}
+
+.admin-app {
+  grid-template-columns: minmax(320px, 390px) 1fr;
+}
+
+.admin-list {
+  min-width: 0;
+  padding: 54px 0 24px;
+}
+
+.team-list {
+  display: grid;
+  gap: 12px;
+}
+
+.team-card {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(220px, 1.4fr) 96px auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #33363d;
+  border-radius: 8px;
+  background: #101113;
+}
+
+.team-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.team-card strong {
+  color: #f2f2f0;
+}
+
+.team-card span,
+.team-card a {
+  color: #b8b8b4;
+  font-size: 13px;
+}
+
+.team-card a {
+  overflow-wrap: anywhere;
+}
+
+.team-card img {
+  width: 88px;
+  height: 40px;
+  object-fit: contain;
+  background: #000;
+  border-radius: 4px;
+}
+
 code {
   color: #f2f2f0;
 }
@@ -316,6 +394,18 @@ code {
   .preview-area {
     order: -1;
     padding: 8px 0 16px;
+  }
+
+  .admin-app {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-list {
+    padding: 0;
+  }
+
+  .team-card {
+    grid-template-columns: 1fr;
   }
 
   .swatches {

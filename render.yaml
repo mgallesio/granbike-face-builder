@@ -10,8 +10,12 @@ services:
         value: production
       - key: TMP_DIR
         value: /tmp/granbike-face-builder
+      - key: TEAM_DATA_DIR
+        value: /var/data
       - key: JAVA_PATH
         value: java
+      - key: ADMIN_PASSWORD
+        sync: false
       # Optional, only needed if you want PRG generation on Render.
       # Put a private zip URL containing the Connect IQ SDK folder.
       - key: CONNECTIQ_SDK_ZIP_URL

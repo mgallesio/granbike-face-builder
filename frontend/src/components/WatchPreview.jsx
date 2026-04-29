@@ -37,8 +37,12 @@ export default function WatchPreview({ config, photoUrl }) {
   useEffect(() => {
     const img = new Image();
     img.onload = () => { logosquadraRef.current = img; };
-    img.src = `/api/logosquadra?logo=${encodeURIComponent(config.logoName || "logosquadra")}&t=${Date.now()}`;
-  }, [config.logoName]);
+    if (config.teamSlug) {
+      img.src = `/api/teams/${encodeURIComponent(config.teamSlug)}/logo?t=${Date.now()}`;
+    } else {
+      img.src = `/api/logosquadra?logo=${encodeURIComponent(config.logoName || "logosquadra")}&t=${Date.now()}`;
+    }
+  }, [config.logoName, config.teamSlug]);
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");

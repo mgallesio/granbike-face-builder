@@ -27,52 +27,65 @@ const DEVICES = [
   { id: "fenix6xpro", label: "fenix 6X Pro" },
 ];
 
+const DEFAULT_CONFIG = {
+  name: "Granbike Face",
+  prgFileName: "GranbikeFace",
+  teamSlug: "",
+  device: "fenix7pro",
+  backgroundColor: "BLACK",
+  accentColor: "YELLOW",
+  secondHandColor: "WHITE",
+  logoName: "logosquadra",
+  showHr: true,
+  showBattery: true,
+  showHands: true,
+  showDigitalTime: false,
+  showDate: false,
+  showAltitude: false,
+  showSteps: false,
+  showCalories: false,
+  showSeconds: true,
+  showTicks: true,
+  showNumbers: true,
+  numbersMode: "cardinal",
+  hrX: 130,
+  hrY: 50,
+  batteryX: 130,
+  batteryY: 165,
+  digitalTimeX: 130,
+  digitalTimeY: 96,
+  dateX: 130,
+  dateY: 120,
+  altitudeX: 210,
+  altitudeY: 184,
+  stepsX: 130,
+  stepsY: 218,
+  caloriesX: 210,
+  caloriesY: 74,
+  text1X: 130,
+  text1Y: 130,
+  text2X: 130,
+  text2Y: 152,
+  logoX: 130,
+  logoY: 192,
+  logoScale: 100,
+  photoScale: 100,
+  memorialLine1: "",
+  memorialLine2: "",
+  hasPhoto: false,
+};
+
 export default function App() {
-  const [config, setConfig] = useState({
-    name: "Granbike Face",
-    device: "fenix7pro",
-    backgroundColor: "BLACK",
-    accentColor: "YELLOW",
-    secondHandColor: "WHITE",
-    logoName: "logosquadra",
-    showHr: true,
-    showBattery: true,
-    showHands: true,
-    showDigitalTime: false,
-    showDate: false,
-    showAltitude: false,
-    showSteps: false,
-    showCalories: false,
-    showSeconds: true,
-    showTicks: true,
-    showNumbers: true,
-    numbersMode: "cardinal",
-    hrX: 130,
-    hrY: 50,
-    batteryX: 130,
-    batteryY: 165,
-    digitalTimeX: 130,
-    digitalTimeY: 96,
-    dateX: 130,
-    dateY: 120,
-    altitudeX: 210,
-    altitudeY: 184,
-    stepsX: 130,
-    stepsY: 218,
-    caloriesX: 210,
-    caloriesY: 74,
-    text1X: 130,
-    text1Y: 130,
-    text2X: 130,
-    text2Y: 152,
-    logoX: 130,
-    logoY: 192,
-    logoScale: 100,
-    photoScale: 100,
-    memorialLine1: "",
-    memorialLine2: "",
-    hasPhoto: false,
-  });
+  const route = getRoute();
+  if (route.mode === "admin") {
+    return <AdminApp />;
+  }
+  return <BuilderApp route={route} />;
+}
+
+function BuilderApp({ route }) {
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [team, setTeam] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [status, setStatus] = useState({
     msg: "Configura la watch face e premi Genera PRG.",
@@ -115,6 +128,36 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (route.mode !== "team") return;
+    let active = true;
+    fetch(`/api/teams/${encodeURIComponent(route.slug)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Squadra non trovata");
+        return res.json();
+      })
+      .then((data) => {
+        if (!active) return;
+        setTeam(data);
+        setConfig((current) => ({
+          ...current,
+          name: data.name,
+          prgFileName: data.prgFileName,
+          teamSlug: data.slug,
+          logoName: "logosquadra",
+          backgroundColor: data.backgroundColor || current.backgroundColor,
+          accentColor: data.accentColor || current.accentColor,
+        }));
+      })
+      .catch((e) => {
+        if (!active) return;
+        setStatus({ msg: `Errore: ${e.message}`, kind: "error" });
+      });
+    return () => {
+      active = false;
+    };
+  }, [route.mode, route.slug]);
+
   function update(key, value) {
     setConfig((current) => ({ ...current, [key]: value }));
   }
@@ -149,7 +192,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${safeFileName(config.name || "GranbikeFace")}.prg`;
+      link.download = `${safeFileName(config.prgFileName || config.name || "GranbikeFace")}.prg`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus({
@@ -181,7 +224,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${safeFileName(config.name || "GranbikeFace")}-beta.iq`;
+      link.download = `${safeFileName(config.prgFileName || config.name || "GranbikeFace")}-beta.iq`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus({
@@ -203,7 +246,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${safeFileName(config.name || "GranbikeFace")}-preview.png`;
+      link.download = `${safeFileName(config.prgFileName || config.name || "GranbikeFace")}-preview.png`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus({ msg: "Anteprima face scaricata in PNG.", kind: "ok" });
@@ -216,13 +259,19 @@ export default function App() {
         <header className="topbar">
           <div>
             <h1>Granbike Face Builder</h1>
-            <p>Generatore web per watch face Garmin Connect IQ.</p>
+            <p>{team ? `${team.name} - link squadra` : "Generatore web per watch face Garmin Connect IQ."}</p>
           </div>
           <span className={`api-dot ${apiReady ? "ok" : "error"}`} title={apiReady ? "API online" : "API offline"} />
         </header>
 
         <section className="panel">
           <h2>Generale</h2>
+          {team && (
+            <div className="team-banner">
+              <strong>{team.name}</strong>
+              <span>File: {team.prgFileName}.prg</span>
+            </div>
+          )}
           <div className="field">
             <label>Nome app</label>
             <input
@@ -230,6 +279,7 @@ export default function App() {
               value={config.name}
               onChange={(e) => update("name", e.target.value)}
               maxLength={30}
+              disabled={Boolean(team)}
             />
           </div>
           <div className="field">
@@ -245,6 +295,7 @@ export default function App() {
               ))}
             </select>
           </div>
+          {!team && (
           <div className="field">
             <label>Logo squadra</label>
             <select
@@ -255,6 +306,7 @@ export default function App() {
               <option value="logosquadra2">Logo squadra 2</option>
             </select>
           </div>
+          )}
         </section>
 
         <section className="panel">
@@ -479,6 +531,146 @@ export default function App() {
   );
 }
 
+function AdminApp() {
+  const [password, setPassword] = useState(() => sessionStorage.getItem("adminPassword") || "");
+  const [teams, setTeams] = useState([]);
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    prgFileName: "",
+    backgroundColor: "BLACK",
+    accentColor: "YELLOW",
+  });
+  const [logoFile, setLogoFile] = useState(null);
+  const [status, setStatus] = useState({ msg: "", kind: "" });
+
+  useEffect(() => {
+    loadTeams();
+  }, []);
+
+  async function loadTeams() {
+    const res = await fetch("/api/teams");
+    const data = await res.json();
+    setTeams(data);
+  }
+
+  function updateForm(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function editTeam(team) {
+    setForm({
+      name: team.name,
+      slug: team.slug,
+      prgFileName: team.prgFileName,
+      backgroundColor: team.backgroundColor || "BLACK",
+      accentColor: team.accentColor || "YELLOW",
+    });
+    setLogoFile(null);
+  }
+
+  async function saveTeam(e) {
+    e.preventDefault();
+    setStatus({ msg: "Salvataggio squadra...", kind: "" });
+    try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([key, value]) => fd.append(key, value));
+      if (logoFile) fd.append("logo", logoFile);
+      sessionStorage.setItem("adminPassword", password);
+      const res = await fetch("/api/admin/teams", {
+        method: "POST",
+        body: fd,
+        headers: { "x-admin-password": password },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
+        throw new Error(err.error || res.statusText);
+      }
+      const team = await res.json();
+      setStatus({ msg: `Squadra salvata: /team/${team.slug}`, kind: "ok" });
+      setForm({
+        name: "",
+        slug: "",
+        prgFileName: "",
+        backgroundColor: "BLACK",
+        accentColor: "YELLOW",
+      });
+      setLogoFile(null);
+      await loadTeams();
+    } catch (e) {
+      setStatus({ msg: `Errore: ${e.message}`, kind: "error" });
+    }
+  }
+
+  return (
+    <div className="app admin-app">
+      <aside className="sidebar">
+        <header className="topbar">
+          <div>
+            <h1>Backoffice squadre</h1>
+            <p>Crea link dedicati per ogni squadra sportiva.</p>
+          </div>
+        </header>
+
+        <form className="panel" onSubmit={saveTeam}>
+          <h2>Squadra</h2>
+          <div className="field">
+            <label>Password backoffice</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label>Nome squadra</label>
+            <input value={form.name} onChange={(e) => updateForm("name", e.target.value)} required />
+          </div>
+          <div className="field">
+            <label>Slug link</label>
+            <input value={form.slug} onChange={(e) => updateForm("slug", e.target.value)} placeholder="granbike-team" />
+          </div>
+          <div className="field">
+            <label>Nome file PRG</label>
+            <input value={form.prgFileName} onChange={(e) => updateForm("prgFileName", e.target.value)} placeholder="GranbikeTeamFace" />
+          </div>
+          <div className="field">
+            <label>Logo squadra</label>
+            <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
+          </div>
+          <ColorPicker label="Sfondo default" value={form.backgroundColor} onChange={(value) => updateForm("backgroundColor", value)} />
+          <ColorPicker label="Colore default" value={form.accentColor} onChange={(value) => updateForm("accentColor", value)} />
+          <button className="btn" type="submit">Salva squadra</button>
+          <div className={`status ${status.kind}`}>{status.msg}</div>
+        </form>
+      </aside>
+
+      <main className="admin-list">
+        <section className="panel">
+          <h2>Link squadre</h2>
+          {teams.length === 0 && <p className="muted">Nessuna squadra configurata.</p>}
+          <div className="team-list">
+            {teams.map((team) => (
+              <article className="team-card" key={team.slug}>
+                <div>
+                  <strong>{team.name}</strong>
+                  <span>{team.prgFileName}.prg</span>
+                </div>
+                <a href={`/team/${team.slug}`}>{window.location.origin}/team/{team.slug}</a>
+                {team.hasLogo && <img src={`/api/teams/${team.slug}/logo`} alt="" />}
+                <button className="secondary-btn" type="button" onClick={() => editTeam(team)}>
+                  Modifica
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 function ColorPicker({ label, value, onChange }) {
   return (
     <div className="field">
@@ -567,4 +759,12 @@ function safeFileName(name) {
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
     .trim()
     .slice(0, 40) || "GranbikeFace";
+}
+
+function getRoute() {
+  const path = window.location.pathname;
+  if (path === "/admin" || path.startsWith("/admin/")) return { mode: "admin" };
+  const match = path.match(/^\/team\/([a-z0-9-]+)/i);
+  if (match) return { mode: "team", slug: match[1].toLowerCase() };
+  return { mode: "builder" };
 }

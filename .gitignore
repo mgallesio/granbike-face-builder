@@ -10,3 +10,4 @@ localtunnel.err
 backend/keys/*.der
 backend/keys/*.pem
 backend/tmp_*.png
+backend/data/
