@@ -2,7 +2,9 @@
 <iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
     <iq:application id="{{APP_ID}}" type="watchface" name="@Strings.AppName" entry="Main" launcherIcon="@Drawables.LauncherIcon" minSdkVersion="3.0.0">
         <iq:products>
-            <iq:product id="{{DEVICE}}"/>
+            {{#PRODUCTS}}
+            <iq:product id="{{id}}"/>
+            {{/PRODUCTS}}
         </iq:products>
         {{#SHOW_ALTITUDE}}
         <iq:permissions>

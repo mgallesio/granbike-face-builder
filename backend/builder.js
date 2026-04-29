@@ -31,6 +31,18 @@ const VALID_DEVICES = new Set([
   "fenix7", "fenix7pro", "fenix7s", "fenix7spro", "fenix7x", "fenix7xpro",
   "fenix7pronowifi", "fenix7xpronowifi",
 ]);
+const STORE_DEVICES = [
+  "fenix7pro",
+  "fenix7",
+  "fenix7s",
+  "fenix7x",
+  "fenix7spro",
+  "fenix7xpro",
+  "fenix6",
+  "fenix6pro",
+  "fenix6s",
+  "fenix6xpro",
+];
 
 const VALID_NUMBER_MODES = new Set(["none", "cardinal", "all"]);
 const VALID_LOGOS = new Set(["logosquadra", "logosquadra2"]);
@@ -149,6 +161,67 @@ function safeLogoScale(n, fallback = 100) {
  * @param {string} tmpBase cartella base per build temporanee
  */
 export async function buildFace(config, photoPath, tmpBase) {
+  const { buildDir, device } = await prepareBuild(config, photoPath, tmpBase, {
+    products: [safeDevice(config.device, "fenix7pro")],
+  });
+
+  // Compila con monkeyc
+  const SDK = process.env.SDK_PATH;
+  const JAVA = process.env.JAVA_PATH || "java";
+  const KEY = process.env.DEVELOPER_KEY_PATH;
+  if (!SDK) throw new Error("SDK_PATH non configurato in .env");
+  if (!KEY) throw new Error("DEVELOPER_KEY_PATH non configurato in .env");
+
+  const JAR = process.env.MONKEYBRAINS_JAR || path.join(SDK, "bin", "monkeybrains.jar");
+  const prgPath = path.join(buildDir, "out.prg");
+
+  await runMonkeyCompiler(
+    JAVA,
+    JAR,
+    [
+      "-o", prgPath,
+      "-f", path.join(buildDir, "monkey.jungle"),
+      "-y", KEY,
+      "-d", device,
+      "-w",
+    ],
+    60000
+  );
+
+  return { prgPath, buildDir };
+}
+
+export async function buildStorePackage(config, photoPath, tmpBase) {
+  const { buildDir } = await prepareBuild(config, photoPath, tmpBase, {
+    products: STORE_DEVICES,
+  });
+
+  const SDK = process.env.SDK_PATH;
+  const JAVA = process.env.JAVA_PATH || "java";
+  const KEY = process.env.DEVELOPER_KEY_PATH;
+  if (!SDK) throw new Error("SDK_PATH non configurato in .env");
+  if (!KEY) throw new Error("DEVELOPER_KEY_PATH non configurato in .env");
+
+  const JAR = process.env.MONKEYBRAINS_JAR || path.join(SDK, "bin", "monkeybrains.jar");
+  const packagePath = path.join(buildDir, "store-beta.iq");
+
+  await runMonkeyCompiler(
+    JAVA,
+    JAR,
+    [
+      "-e",
+      "-o", packagePath,
+      "-f", path.join(buildDir, "monkey.jungle"),
+      "-y", KEY,
+      "-w",
+    ],
+    300000
+  );
+
+  return { packagePath, buildDir };
+}
+
+async function prepareBuild(config, photoPath, tmpBase, options = {}) {
   const numbersMode = safeNumberMode(config.numbersMode, config.showNumbers);
   const logoName = safeLogoName(config.logoName);
   // Validazione / sanificazione
@@ -201,6 +274,10 @@ export async function buildFace(config, photoPath, tmpBase) {
       !!safeText(config.memorialLine1) || !!safeText(config.memorialLine2),
   };
   const device = safeDevice(config.device, "fenix7pro");
+  const products = (options.products || [device])
+    .map((id) => safeDevice(id, "fenix7pro"))
+    .filter((id, index, arr) => arr.indexOf(id) === index)
+    .map((id) => ({ id }));
   const appName = safeText(config.name, 30) || "Custom Face";
   const appId = randomBytes(16).toString("hex");
 
@@ -222,6 +299,7 @@ export async function buildFace(config, photoPath, tmpBase) {
   const manXml = Mustache.render(manTpl, {
     APP_ID: appId,
     DEVICE: device,
+    PRODUCTS: products,
     SHOW_ALTITUDE: vars.SHOW_ALTITUDE,
   });
   await fs.writeFile(path.join(buildDir, "manifest.xml"), manXml);
@@ -279,28 +357,15 @@ export async function buildFace(config, photoPath, tmpBase) {
       .toFile(dst);
   }
 
-  // Compila con monkeyc
-  const SDK = process.env.SDK_PATH;
-  const JAVA = process.env.JAVA_PATH || "java";
-  const KEY = process.env.DEVELOPER_KEY_PATH;
-  if (!SDK) throw new Error("SDK_PATH non configurato in .env");
-  if (!KEY) throw new Error("DEVELOPER_KEY_PATH non configurato in .env");
+  return { buildDir, device };
+}
 
-  const JAR = process.env.MONKEYBRAINS_JAR || path.join(SDK, "bin", "monkeybrains.jar");
-  const prgPath = path.join(buildDir, "out.prg");
-
+async function runMonkeyCompiler(javaPath, jarPath, args, timeout = 60000) {
   await new Promise((resolve, reject) => {
     execFile(
-      JAVA,
-      [
-        "-jar", JAR,
-        "-o", prgPath,
-        "-f", path.join(buildDir, "monkey.jungle"),
-        "-y", KEY,
-        "-d", device,
-        "-w",
-      ],
-      { timeout: 60000 },
+      javaPath,
+      ["-jar", jarPath, ...args],
+      { timeout },
       (err, stdout, stderr) => {
         if (err) {
           console.error("monkeyc stdout:", stdout);
@@ -312,6 +377,4 @@ export async function buildFace(config, photoPath, tmpBase) {
       }
     );
   });
-
-  return { prgPath, buildDir };
 }

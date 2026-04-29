@@ -4,7 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
-import { buildFace, createLogoSquadraAsset } from "./builder.js";
+import { buildFace, buildStorePackage, createLogoSquadraAsset } from "./builder.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -85,6 +85,23 @@ app.post("/api/build", upload.single("photo"), async (req, res) => {
     if (buildDir) {
       await fs.rm(buildDir, { recursive: true, force: true }).catch(() => {});
     }
+  }
+});
+
+app.post("/api/package", upload.single("photo"), async (req, res) => {
+  try {
+    const config = JSON.parse(req.body.config || "{}");
+    const photoPath = req.file ? req.file.path : null;
+    const result = await buildStorePackage(config, photoPath, TMP_DIR);
+    const downloadName = `${safeDownloadName(config.name || "GranbikeFace")}-beta.iq`;
+
+    res.download(result.packagePath, downloadName, async (err) => {
+      await cleanupUpload(photoPath);
+      if (err) console.error("Errore download package:", err);
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || "Errore durante la generazione del pacchetto beta" });
   }
 });
 

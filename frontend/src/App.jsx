@@ -163,6 +163,38 @@ export default function App() {
     }
   }
 
+  async function handlePackageBuild() {
+    setBusy(true);
+    setStatus({ msg: "Creazione pacchetto beta Garmin in corso...", kind: "" });
+    try {
+      const fd = new FormData();
+      fd.append("config", JSON.stringify(config));
+      if (photoFile) fd.append("photo", photoFile);
+
+      const res = await fetch("/api/package", { method: "POST", body: fd });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
+        throw new Error(err.error || res.statusText);
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${safeFileName(config.name || "GranbikeFace")}-beta.iq`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus({
+        msg: "Pacchetto .iq generato. Caricalo nella dashboard Garmin Connect IQ come beta.",
+        kind: "ok",
+      });
+    } catch (e) {
+      setStatus({ msg: `Errore: ${e.message}`, kind: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function handlePreviewDownload() {
     const canvas = document.querySelector(".watch-canvas");
     if (!canvas) return;
@@ -425,6 +457,14 @@ export default function App() {
           </button>
           <button className="secondary-action" onClick={handlePreviewDownload} type="button">
             Scarica face PNG
+          </button>
+          <button
+            className="secondary-action"
+            onClick={handlePackageBuild}
+            type="button"
+            disabled={busy || !apiReady || !buildReady}
+          >
+            Scarica pacchetto beta Garmin (.iq)
           </button>
           <div className={`status ${status.kind}`}>{status.msg}</div>
           <p>
