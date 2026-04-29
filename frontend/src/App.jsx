@@ -684,10 +684,12 @@ function AdminApp() {
     e.preventDefault();
     setLogoStatus({ msg: "Salvataggio logo...", kind: "" });
     try {
+      const selectedFile = libraryLogoFile || e.currentTarget.elements.libraryLogo?.files?.[0] || null;
+      if (!selectedFile) throw new Error("Logo non selezionato");
       const fd = new FormData();
       fd.append("name", logoForm.name);
       fd.append("id", logoForm.id);
-      if (libraryLogoFile) fd.append("logo", libraryLogoFile);
+      fd.append("logo", selectedFile);
       sessionStorage.setItem("adminPassword", password);
       const res = await fetch("/api/admin/logos", {
         method: "POST",
@@ -810,7 +812,13 @@ function AdminApp() {
           </div>
           <div className="field">
             <label>File logo</label>
-            <input type="file" accept="image/*" onChange={(e) => setLibraryLogoFile(e.target.files?.[0] || null)} required />
+            <input
+              name="libraryLogo"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setLibraryLogoFile(e.target.files?.[0] || null)}
+              required
+            />
           </div>
           <button className="btn" type="submit">Salva logo</button>
           <div className={`status ${logoStatus.kind}`}>{logoStatus.msg}</div>
