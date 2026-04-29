@@ -124,6 +124,31 @@ app.post("/api/admin/logos", requireAdmin, upload.single("logo"), async (req, re
   }
 });
 
+app.post("/api/admin/logos/bulk", requireAdmin, upload.array("logos", 100), async (req, res) => {
+  const files = req.files || [];
+  try {
+    if (files.length === 0) throw new Error("Nessun logo caricato");
+    const saved = [];
+    for (const file of files) {
+      const baseName = path.basename(file.originalname || "logo", path.extname(file.originalname || ""));
+      const logo = await teamStore.saveLogo(
+        {
+          name: baseName,
+          id: baseName,
+          logoOriginalName: file.originalname,
+        },
+        file.path
+      );
+      saved.push(publicLogo(logo));
+    }
+    await cleanupUploads(files);
+    res.json({ count: saved.length, logos: saved });
+  } catch (e) {
+    await cleanupUploads(files);
+    res.status(400).json({ error: String(e.message || e) });
+  }
+});
+
 app.post("/api/admin/teams", requireAdmin, upload.single("logo"), async (req, res) => {
   try {
     const team = await teamStore.saveTeam(
@@ -256,6 +281,10 @@ async function applyTeamConfig(config) {
 async function cleanupUpload(filePath) {
   if (!filePath) return;
   await fs.unlink(filePath).catch(() => {});
+}
+
+async function cleanupUploads(files) {
+  await Promise.all((files || []).map((file) => cleanupUpload(file?.path)));
 }
 
 function requireAdmin(req, res, next) {

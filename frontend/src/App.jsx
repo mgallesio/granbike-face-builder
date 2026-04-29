@@ -546,6 +546,7 @@ function AdminApp() {
   const [logoForm, setLogoForm] = useState({ name: "", id: "" });
   const [logoFile, setLogoFile] = useState(null);
   const [libraryLogoFile, setLibraryLogoFile] = useState(null);
+  const [bulkLogoFiles, setBulkLogoFiles] = useState([]);
   const [status, setStatus] = useState({ msg: "", kind: "" });
   const [logoStatus, setLogoStatus] = useState({ msg: "", kind: "" });
 
@@ -644,6 +645,32 @@ function AdminApp() {
     }
   }
 
+  async function saveLogoList(e) {
+    e.preventDefault();
+    setLogoStatus({ msg: "Caricamento lista loghi...", kind: "" });
+    try {
+      if (bulkLogoFiles.length === 0) throw new Error("Seleziona almeno un file logo");
+      const fd = new FormData();
+      bulkLogoFiles.forEach((file) => fd.append("logos", file));
+      sessionStorage.setItem("adminPassword", password);
+      const res = await fetch("/api/admin/logos/bulk", {
+        method: "POST",
+        body: fd,
+        headers: { "x-admin-password": password },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
+        throw new Error(err.error || res.statusText);
+      }
+      const result = await res.json();
+      setLogoStatus({ msg: `${result.count} loghi caricati nell'archivio`, kind: "ok" });
+      setBulkLogoFiles([]);
+      await loadLogos();
+    } catch (e) {
+      setLogoStatus({ msg: `Errore: ${e.message}`, kind: "error" });
+    }
+  }
+
   return (
     <div className="app admin-app">
       <aside className="sidebar">
@@ -712,6 +739,25 @@ function AdminApp() {
           </div>
           <button className="btn" type="submit">Salva logo</button>
           <div className={`status ${logoStatus.kind}`}>{logoStatus.msg}</div>
+        </form>
+
+        <form className="panel" onSubmit={saveLogoList}>
+          <h2>Lista loghi</h2>
+          <div className="field">
+            <label>Carica più loghi</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => setBulkLogoFiles(Array.from(e.target.files || []))}
+            />
+          </div>
+          {bulkLogoFiles.length > 0 && (
+            <div className="bulk-summary">
+              {bulkLogoFiles.length} file selezionati
+            </div>
+          )}
+          <button className="btn" type="submit">Carica lista loghi</button>
         </form>
       </aside>
 

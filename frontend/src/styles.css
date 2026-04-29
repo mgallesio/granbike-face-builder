@@ -329,6 +329,12 @@ canvas {
   font-size: 13px;
 }
 
+.bulk-summary {
+  margin: -4px 0 12px;
+  color: #b8b8b4;
+  font-size: 13px;
+}
+
 .admin-app {
   grid-template-columns: minmax(320px, 390px) 1fr;
 }
