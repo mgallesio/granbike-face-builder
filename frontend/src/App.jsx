@@ -550,10 +550,24 @@ function AdminApp() {
   const [status, setStatus] = useState({ msg: "", kind: "" });
   const [logoStatus, setLogoStatus] = useState({ msg: "", kind: "" });
 
+  const dedicatedLogoUrl = useMemo(
+    () => (logoFile ? URL.createObjectURL(logoFile) : null),
+    [logoFile]
+  );
+  const teamLogoPreviewUrl = dedicatedLogoUrl
+    || (form.logoId ? `/api/logos/${encodeURIComponent(form.logoId)}/image` : "")
+    || (form.slug ? `/api/teams/${encodeURIComponent(form.slug)}/logo` : "");
+
   useEffect(() => {
     loadTeams();
     loadLogos();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (dedicatedLogoUrl) URL.revokeObjectURL(dedicatedLogoUrl);
+    };
+  }, [dedicatedLogoUrl]);
 
   async function loadTeams() {
     const res = await fetch("/api/teams");
@@ -717,6 +731,18 @@ function AdminApp() {
             <label>Logo squadra dedicato</label>
             <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
           </div>
+          {teamLogoPreviewUrl && (
+            <div className="team-logo-preview">
+              <span>Anteprima logo squadra</span>
+              <img
+                src={teamLogoPreviewUrl}
+                alt=""
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
+          )}
           <ColorPicker label="Sfondo default" value={form.backgroundColor} onChange={(value) => updateForm("backgroundColor", value)} />
           <ColorPicker label="Colore default" value={form.accentColor} onChange={(value) => updateForm("accentColor", value)} />
           <button className="btn" type="submit">Salva squadra</button>

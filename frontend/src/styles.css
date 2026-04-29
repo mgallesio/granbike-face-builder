@@ -329,6 +329,26 @@ canvas {
   font-size: 13px;
 }
 
+.team-logo-preview {
+  display: grid;
+  gap: 8px;
+  margin: -2px 0 14px;
+}
+
+.team-logo-preview span {
+  color: #c8c8c4;
+  font-size: 13px;
+}
+
+.team-logo-preview img {
+  width: 100%;
+  height: 118px;
+  object-fit: contain;
+  background: #000;
+  border: 1px solid #3c4048;
+  border-radius: 8px;
+}
+
 .bulk-summary {
   margin: -4px 0 12px;
   color: #b8b8b4;
