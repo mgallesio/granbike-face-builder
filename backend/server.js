@@ -166,6 +166,15 @@ app.post("/api/admin/teams", requireAdmin, upload.single("logo"), async (req, re
   }
 });
 
+app.post("/api/admin/teams/:slug/defaults", requireAdmin, async (req, res) => {
+  try {
+    const team = await teamStore.saveTeamDefaults(req.params.slug, req.body?.config || {});
+    res.json(publicTeam(team));
+  } catch (e) {
+    res.status(400).json({ error: String(e.message || e) });
+  }
+});
+
 // Endpoint build
 app.post("/api/build", upload.single("photo"), async (req, res) => {
   let buildDir = null;
@@ -269,6 +278,7 @@ async function applyTeamConfig(config) {
   const team = await teamStore.getTeam(config.teamSlug);
   if (!team) throw new Error("Squadra non trovata");
   const logoPath = await teamStore.getLogoPath(team);
+  Object.assign(config, { ...(team.defaultConfig || {}), ...config });
   config.name = team.name;
   config.prgFileName = team.prgFileName;
   config.logoName = "logosquadra";

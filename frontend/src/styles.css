@@ -278,6 +278,25 @@ canvas {
   background: #24262b;
 }
 
+.admin-default-box {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #33363d;
+}
+
+.admin-default-box input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  background: #101113;
+  border: 1px solid #3c4048;
+  border-radius: 6px;
+  color: #f2f2f0;
+  font-size: 14px;
+}
+
 .secondary-btn {
   margin-top: 10px;
   padding: 7px 11px;

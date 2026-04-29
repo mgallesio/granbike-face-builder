@@ -3,6 +3,48 @@ import path from "path";
 
 const TEAM_SLUG_RE = /^[a-z0-9-]{2,40}$/;
 const LOGO_ID_RE = /^[a-z0-9-]{2,40}$/;
+const DEFAULT_CONFIG_KEYS = new Set([
+  "device",
+  "backgroundColor",
+  "accentColor",
+  "secondHandColor",
+  "showHr",
+  "showBattery",
+  "showHands",
+  "showDigitalTime",
+  "showDate",
+  "showAltitude",
+  "showSteps",
+  "showCalories",
+  "showSeconds",
+  "showTicks",
+  "showNumbers",
+  "numbersMode",
+  "hrX",
+  "hrY",
+  "batteryX",
+  "batteryY",
+  "digitalTimeX",
+  "digitalTimeY",
+  "dateX",
+  "dateY",
+  "altitudeX",
+  "altitudeY",
+  "stepsX",
+  "stepsY",
+  "caloriesX",
+  "caloriesY",
+  "text1X",
+  "text1Y",
+  "text2X",
+  "text2Y",
+  "logoX",
+  "logoY",
+  "logoScale",
+  "photoScale",
+  "memorialLine1",
+  "memorialLine2",
+]);
 
 export function createTeamStore(baseDir) {
   const dataDir = path.join(baseDir, "data");
@@ -59,6 +101,7 @@ export function createTeamStore(baseDir) {
       accentColor: safeText(input.accentColor, 20) || existing?.accentColor || "YELLOW",
       logoId: selectedLogo?.id || null,
       logoFileName,
+      defaultConfig: existing?.defaultConfig || {},
       updatedAt: now,
       createdAt: existing?.createdAt || now,
     };
@@ -67,6 +110,22 @@ export function createTeamStore(baseDir) {
       ? teams.map((item) => (item.slug === slug ? team : item))
       : [...teams, team];
     await writeTeams(next);
+    return team;
+  }
+
+  async function saveTeamDefaults(slug, config) {
+    await ensureReady();
+    const cleanSlug = safeSlug(slug);
+    if (!cleanSlug) throw new Error("Slug squadra non valido");
+    const teams = await readTeams();
+    const existing = teams.find((team) => team.slug === cleanSlug);
+    if (!existing) throw new Error("Squadra non trovata");
+    const team = {
+      ...existing,
+      defaultConfig: sanitizeDefaultConfig(config),
+      updatedAt: new Date().toISOString(),
+    };
+    await writeTeams(teams.map((item) => (item.slug === cleanSlug ? team : item)));
     return team;
   }
 
@@ -174,6 +233,7 @@ export function createTeamStore(baseDir) {
     listTeams,
     getTeam,
     saveTeam,
+    saveTeamDefaults,
     listLogos,
     getLogo,
     saveLogo,
@@ -192,6 +252,7 @@ export function publicTeam(team) {
     accentColor: team.accentColor,
     logoId: team.logoId || "",
     hasLogo: Boolean(team.logoId || team.logoFileName),
+    defaultConfig: team.defaultConfig || {},
     updatedAt: team.updatedAt,
     createdAt: team.createdAt,
   };
@@ -239,4 +300,20 @@ function safeFileName(value) {
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
     .trim()
     .slice(0, 40) || "GranbikeFace";
+}
+
+function sanitizeDefaultConfig(config) {
+  if (!config || typeof config !== "object") return {};
+  const next = {};
+  for (const [key, value] of Object.entries(config)) {
+    if (!DEFAULT_CONFIG_KEYS.has(key)) continue;
+    if (typeof value === "boolean") {
+      next[key] = value;
+    } else if (typeof value === "number") {
+      next[key] = Math.max(0, Math.min(999, Math.round(value)));
+    } else if (typeof value === "string") {
+      next[key] = safeText(value, 80);
+    }
+  }
+  return next;
 }

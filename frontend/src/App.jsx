@@ -94,6 +94,7 @@ function BuilderApp({ route }) {
   const [apiReady, setApiReady] = useState(false);
   const [buildReady, setBuildReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [adminPassword, setAdminPassword] = useState(() => sessionStorage.getItem("adminPassword") || "");
 
   const photoUrl = useMemo(
     () => (photoFile ? URL.createObjectURL(photoFile) : null),
@@ -141,6 +142,7 @@ function BuilderApp({ route }) {
         setTeam(data);
         setConfig((current) => ({
           ...current,
+          ...(data.defaultConfig || {}),
           name: data.name,
           prgFileName: data.prgFileName,
           teamSlug: data.slug,
@@ -251,6 +253,35 @@ function BuilderApp({ route }) {
       URL.revokeObjectURL(url);
       setStatus({ msg: "Anteprima face scaricata in PNG.", kind: "ok" });
     }, "image/png");
+  }
+
+  async function handleSaveTeamDefaults() {
+    if (!team) return;
+    setBusy(true);
+    setStatus({ msg: "Salvataggio impostazioni default squadra...", kind: "" });
+    try {
+      sessionStorage.setItem("adminPassword", adminPassword);
+      const res = await fetch(`/api/admin/teams/${encodeURIComponent(team.slug)}/defaults`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": adminPassword,
+        },
+        body: JSON.stringify({ config }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
+        throw new Error(err.error || res.statusText);
+      }
+      setStatus({
+        msg: "Impostazioni default salvate. Chi apre questo link partirà da questa configurazione.",
+        kind: "ok",
+      });
+    } catch (e) {
+      setStatus({ msg: `Errore: ${e.message}`, kind: "error" });
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -518,6 +549,24 @@ function BuilderApp({ route }) {
           >
             Scarica pacchetto beta Garmin (.iq)
           </button>
+          {team && (
+            <div className="admin-default-box">
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="Password backoffice"
+              />
+              <button
+                className="secondary-action"
+                onClick={handleSaveTeamDefaults}
+                type="button"
+                disabled={busy || !adminPassword}
+              >
+                Salva default squadra
+              </button>
+            </div>
+          )}
           <div className={`status ${status.kind}`}>{status.msg}</div>
           <p>
             {buildReady
