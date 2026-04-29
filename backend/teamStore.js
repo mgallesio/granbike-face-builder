@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import sharp from "sharp";
 
 const TEAM_SLUG_RE = /^[a-z0-9-]{2,40}$/;
 const LOGO_ID_RE = /^[a-z0-9-]{2,40}$/;
@@ -84,13 +85,13 @@ export function createTeamStore(baseDir) {
       ? logos.find((logo) => logo.id === selectedLogoId)
       : null;
     const logoFileName = logoUploadPath
-      ? `${slug}${path.extname(input.logoOriginalName || ".png").toLowerCase() || ".png"}`
+      ? `${slug}.png`
       : selectedLogo?.fileName
         ? null
         : existing?.logoFileName || null;
 
     if (logoUploadPath && logoFileName) {
-      await fs.copyFile(logoUploadPath, path.join(logoDir, logoFileName));
+      await saveTransparentLogo(logoUploadPath, path.join(logoDir, logoFileName));
     }
 
     const team = {
@@ -150,9 +151,8 @@ export function createTeamStore(baseDir) {
     const logos = await readLogos();
     const now = new Date().toISOString();
     const existing = logos.find((logo) => logo.id === id);
-    const ext = path.extname(input.logoOriginalName || ".png").toLowerCase() || ".png";
-    const fileName = `library-${id}${ext}`;
-    await fs.copyFile(logoUploadPath, path.join(logoDir, fileName));
+    const fileName = `library-${id}.png`;
+    await saveTransparentLogo(logoUploadPath, path.join(logoDir, fileName));
 
     const logo = {
       id,
@@ -316,4 +316,64 @@ function sanitizeDefaultConfig(config) {
     }
   }
   return next;
+}
+
+async function saveTransparentLogo(src, dst) {
+  const { data, info } = await sharp(src)
+    .ensureAlpha()
+    .trim({ background: await detectCornerBackground(src), threshold: 25 })
+    .resize(640, 248, {
+      fit: "inside",
+      withoutEnlargement: true,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const bg = await detectCornerColorFromRaw(data, info);
+  const tolerance = 42;
+  for (let i = 0; i < data.length; i += info.channels) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const diff = Math.abs(r - bg.r) + Math.abs(g - bg.g) + Math.abs(b - bg.b);
+    if (diff < tolerance) data[i + 3] = 0;
+  }
+
+  await sharp(data, { raw: info })
+    .png({ palette: false, compressionLevel: 9 })
+    .toFile(dst);
+}
+
+async function detectCornerBackground(src) {
+  const { data, info } = await sharp(src)
+    .ensureAlpha()
+    .resize(80, 80, { fit: "inside", withoutEnlargement: true })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const color = await detectCornerColorFromRaw(data, info);
+  return { r: color.r, g: color.g, b: color.b, alpha: 1 };
+}
+
+async function detectCornerColorFromRaw(data, info) {
+  const points = [
+    [0, 0],
+    [info.width - 1, 0],
+    [0, info.height - 1],
+    [info.width - 1, info.height - 1],
+  ];
+  const colors = points.map(([x, y]) => {
+    const idx = (y * info.width + x) * info.channels;
+    return { r: data[idx], g: data[idx + 1], b: data[idx + 2] };
+  });
+  const total = colors.reduce((acc, color) => ({
+    r: acc.r + color.r,
+    g: acc.g + color.g,
+    b: acc.b + color.b,
+  }), { r: 0, g: 0, b: 0 });
+  return {
+    r: Math.round(total.r / colors.length),
+    g: Math.round(total.g / colors.length),
+    b: Math.round(total.b / colors.length),
+  };
 }
