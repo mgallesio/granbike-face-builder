@@ -44,7 +44,7 @@ export default function WatchPreview({ config, photoUrl }) {
     } else {
       img.src = `/api/logosquadra?logo=${encodeURIComponent(config.logoName || "logosquadra")}&t=${Date.now()}`;
     }
-  }, [config.logoName, config.teamSlug]);
+  }, [config.logoName, config.teamSlug, config.logoCacheKey]);
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");

@@ -95,6 +95,8 @@ function BuilderApp({ route }) {
   const [buildReady, setBuildReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [adminPassword, setAdminPassword] = useState(() => sessionStorage.getItem("adminPassword") || "");
+  const [availableLogos, setAvailableLogos] = useState([]);
+  const [teamLogoId, setTeamLogoId] = useState("");
 
   const photoUrl = useMemo(
     () => (photoFile ? URL.createObjectURL(photoFile) : null),
@@ -140,6 +142,7 @@ function BuilderApp({ route }) {
       .then((data) => {
         if (!active) return;
         setTeam(data);
+        setTeamLogoId(data.logoId || "");
         setConfig((current) => ({
           ...current,
           ...(data.defaultConfig || {}),
@@ -159,6 +162,22 @@ function BuilderApp({ route }) {
       active = false;
     };
   }, [route.mode, route.slug]);
+
+  useEffect(() => {
+    if (route.mode !== "team") return;
+    let active = true;
+    fetch("/api/logos")
+      .then((res) => res.json())
+      .then((data) => {
+        if (active) setAvailableLogos(data);
+      })
+      .catch(() => {
+        if (active) setAvailableLogos([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [route.mode]);
 
   function update(key, value) {
     setConfig((current) => ({ ...current, [key]: value }));
@@ -284,6 +303,40 @@ function BuilderApp({ route }) {
     }
   }
 
+  async function handleSaveTeamLogo() {
+    if (!team) return;
+    setBusy(true);
+    setStatus({ msg: "Salvataggio logo squadra...", kind: "" });
+    try {
+      if (!teamLogoId) throw new Error("Seleziona un logo dalla lista");
+      sessionStorage.setItem("adminPassword", adminPassword);
+      const fd = new FormData();
+      fd.append("name", team.name);
+      fd.append("slug", team.slug);
+      fd.append("prgFileName", team.prgFileName);
+      fd.append("logoId", teamLogoId);
+      fd.append("backgroundColor", config.backgroundColor || team.backgroundColor || "BLACK");
+      fd.append("accentColor", config.accentColor || team.accentColor || "YELLOW");
+      const res = await fetch("/api/admin/teams", {
+        method: "POST",
+        body: fd,
+        headers: { "x-admin-password": adminPassword },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
+        throw new Error(err.error || res.statusText);
+      }
+      const savedTeam = await res.json();
+      setTeam(savedTeam);
+      setConfig((current) => ({ ...current, logoCacheKey: Date.now() }));
+      setStatus({ msg: "Logo squadra salvato e anteprima aggiornata.", kind: "ok" });
+    } catch (e) {
+      setStatus({ msg: `Errore: ${e.message}`, kind: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="app">
       <aside className="sidebar">
@@ -301,6 +354,30 @@ function BuilderApp({ route }) {
             <div className="team-banner">
               <strong>{team.name}</strong>
               <span>File: {team.prgFileName}.prg</span>
+            </div>
+          )}
+          {team && (
+            <div className="team-logo-admin">
+              <div className="field">
+                <label>Logo squadra dalla lista</label>
+                <select value={teamLogoId} onChange={(e) => setTeamLogoId(e.target.value)}>
+                  <option value="">Seleziona logo</option>
+                  {availableLogos.map((logo) => (
+                    <option key={logo.id} value={logo.id}>{logo.name}</option>
+                  ))}
+                </select>
+              </div>
+              {teamLogoId && (
+                <img src={`/api/logos/${encodeURIComponent(teamLogoId)}/image`} alt="" />
+              )}
+              <button
+                className="secondary-btn"
+                onClick={handleSaveTeamLogo}
+                type="button"
+                disabled={busy || !adminPassword || !teamLogoId}
+              >
+                Salva logo squadra
+              </button>
             </div>
           )}
           <div className="field">
