@@ -133,6 +133,36 @@ export default function WatchPreview({ config, photoUrl }) {
         ctx.fillText("85%", config.batteryX ?? cx, config.batteryY ?? 165);
       }
 
+      const now = new Date();
+
+      // Ora digitale
+      if (config.showDigitalTime) {
+        const hh = String(now.getHours()).padStart(2, "0");
+        const mm = String(now.getMinutes()).padStart(2, "0");
+        drawShadowText(
+          ctx,
+          `${hh}:${mm}`,
+          config.digitalTimeX ?? cx,
+          config.digitalTimeY ?? 96,
+          "bold 36px Arial",
+          accent
+        );
+      }
+
+      // Data
+      if (config.showDate) {
+        const dd = String(now.getDate()).padStart(2, "0");
+        const mo = String(now.getMonth() + 1).padStart(2, "0");
+        drawShadowText(
+          ctx,
+          `${dd}/${mo}`,
+          config.dateX ?? cx,
+          config.dateY ?? 120,
+          "bold 16px Arial",
+          "#fff"
+        );
+      }
+
       // Memorial text
       if (config.memorialLine1) {
         drawShadowText(
@@ -156,7 +186,6 @@ export default function WatchPreview({ config, photoUrl }) {
       }
 
       // Lancette
-      const now = new Date();
       const hour = now.getHours() % 12;
       const min = now.getMinutes();
       const sec = now.getSeconds();

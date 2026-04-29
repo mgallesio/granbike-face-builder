@@ -43,6 +43,8 @@ class MainView extends WatchUi.WatchFace {
         {{#SHOW_TICKS}}drawTicks(dc, cx, cy);{{/SHOW_TICKS}}
         {{#SHOW_HR}}drawHr(dc, {{HR_X}}, {{HR_Y}});{{/SHOW_HR}}
         {{#SHOW_BATTERY}}drawBattery(dc, {{BATTERY_X}}, {{BATTERY_Y}});{{/SHOW_BATTERY}}
+        {{#SHOW_DIGITAL_TIME}}drawDigitalTime(dc, {{DIGITAL_TIME_X}}, {{DIGITAL_TIME_Y}});{{/SHOW_DIGITAL_TIME}}
+        {{#SHOW_DATE}}drawDate(dc, {{DATE_X}}, {{DATE_Y}});{{/SHOW_DATE}}
 
         {{#MEMORIAL_LINE1}}drawTextWithShadow(dc, {{TEXT1_X}}, {{TEXT1_Y}}, Graphics.FONT_MEDIUM, "{{MEMORIAL_LINE1}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE1}}
         {{#MEMORIAL_LINE2}}drawTextWithShadow(dc, {{TEXT2_X}}, {{TEXT2_Y}}, Graphics.FONT_SMALL, "{{MEMORIAL_LINE2}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE2}}
@@ -62,6 +64,8 @@ class MainView extends WatchUi.WatchFace {
         drawBackground(dc);
         {{#SHOW_NUMBERS}}drawNumbers(dc, cx, cy);{{/SHOW_NUMBERS}}
         {{#SHOW_TICKS}}drawTicks(dc, cx, cy);{{/SHOW_TICKS}}
+        {{#SHOW_DIGITAL_TIME}}drawDigitalTime(dc, {{DIGITAL_TIME_X}}, {{DIGITAL_TIME_Y}});{{/SHOW_DIGITAL_TIME}}
+        {{#SHOW_DATE}}drawDate(dc, {{DATE_X}}, {{DATE_Y}});{{/SHOW_DATE}}
         {{#MEMORIAL_LINE1}}drawTextWithShadow(dc, {{TEXT1_X}}, {{TEXT1_Y}}, Graphics.FONT_MEDIUM, "{{MEMORIAL_LINE1}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE1}}
         {{#MEMORIAL_LINE2}}drawTextWithShadow(dc, {{TEXT2_X}}, {{TEXT2_Y}}, Graphics.FONT_SMALL, "{{MEMORIAL_LINE2}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE2}}
         drawAllHands(dc, cx, cy);
@@ -193,6 +197,22 @@ class MainView extends WatchUi.WatchFace {
     }
     {{/SHOW_BATTERY}}
 
+    {{#SHOW_DIGITAL_TIME}}
+    function drawDigitalTime(dc, x, y) {
+        var now = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
+        var txt = twoDigits(now.hour) + ":" + twoDigits(now.min);
+        drawTextWithShadow(dc, x, y, Graphics.FONT_LARGE, txt, Graphics.COLOR_{{ACCENT_COLOR}});
+    }
+    {{/SHOW_DIGITAL_TIME}}
+
+    {{#SHOW_DATE}}
+    function drawDate(dc, x, y) {
+        var now = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
+        var txt = twoDigits(now.day) + "/" + twoDigits(now.month);
+        drawTextWithShadow(dc, x, y, Graphics.FONT_SMALL, txt, Graphics.COLOR_WHITE);
+    }
+    {{/SHOW_DATE}}
+
     function drawAllHands(dc, cx, cy) {
         var now  = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
         var hour = now.hour % 12;
@@ -228,7 +248,13 @@ class MainView extends WatchUi.WatchFace {
         dc.setPenWidth(1);
     }
 
-    {{#HAS_MEMORIAL}}
+    function twoDigits(v) {
+        if (v < 10) {
+            return "0" + v.toString();
+        }
+        return v.toString();
+    }
+
     function drawTextWithShadow(dc, x, y, font, text, color) {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x - 1, y,     font, text, Graphics.TEXT_JUSTIFY_CENTER);
@@ -238,5 +264,4 @@ class MainView extends WatchUi.WatchFace {
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, font, text, Graphics.TEXT_JUSTIFY_CENTER);
     }
-    {{/HAS_MEMORIAL}}
 }

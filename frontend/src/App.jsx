@@ -38,6 +38,8 @@ export default function App() {
     showHr: true,
     showBattery: true,
     showHands: true,
+    showDigitalTime: false,
+    showDate: false,
     showSeconds: true,
     showTicks: true,
     showNumbers: true,
@@ -46,6 +48,10 @@ export default function App() {
     hrY: 50,
     batteryX: 130,
     batteryY: 165,
+    digitalTimeX: 130,
+    digitalTimeY: 96,
+    dateX: 130,
+    dateY: 120,
     text1X: 130,
     text1Y: 130,
     text2X: 130,
@@ -237,6 +243,12 @@ export default function App() {
           <Toggle checked={config.showHands} onChange={(value) => update("showHands", value)}>
             Lancette ore/minuti
           </Toggle>
+          <Toggle checked={config.showDigitalTime} onChange={(value) => update("showDigitalTime", value)}>
+            Ora digitale
+          </Toggle>
+          <Toggle checked={config.showDate} onChange={(value) => update("showDate", value)}>
+            Data
+          </Toggle>
           <div className="field">
             <label>Numeri</label>
             <select
@@ -277,6 +289,20 @@ export default function App() {
             y={config.batteryY}
             onX={(value) => update("batteryX", value)}
             onY={(value) => update("batteryY", value)}
+          />
+          <PositionControl
+            label="Ora digitale"
+            x={config.digitalTimeX}
+            y={config.digitalTimeY}
+            onX={(value) => update("digitalTimeX", value)}
+            onY={(value) => update("digitalTimeY", value)}
+          />
+          <PositionControl
+            label="Data"
+            x={config.dateX}
+            y={config.dateY}
+            onX={(value) => update("dateX", value)}
+            onY={(value) => update("dateY", value)}
           />
           <PositionControl
             label="Testo riga 1"
