@@ -230,6 +230,15 @@ canvas {
   box-shadow: 0 0 0 8px #24262b, 0 20px 70px rgba(0, 0, 0, 0.55);
 }
 
+canvas.draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+canvas.draggable:active {
+  cursor: grabbing;
+}
+
 .actions {
   width: min(360px, 100%);
   text-align: center;

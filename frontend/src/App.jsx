@@ -182,6 +182,10 @@ function BuilderApp({ route }) {
     setConfig((current) => ({ ...current, [key]: value }));
   }
 
+  function movePreviewItem(xKey, yKey, x, y) {
+    setConfig((current) => ({ ...current, [xKey]: x, [yKey]: y }));
+  }
+
   function onPhotoChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -610,7 +614,7 @@ function BuilderApp({ route }) {
       </aside>
 
       <main className="preview-area">
-        <WatchPreview config={config} photoUrl={photoUrl} />
+        <WatchPreview config={config} photoUrl={photoUrl} onMoveItem={movePreviewItem} />
         <div className="actions">
           <button className="btn" onClick={handleBuild} disabled={busy || !apiReady || !buildReady}>
             {busy ? "Compilazione..." : buildReady ? "Genera PRG" : "PRG non configurato"}

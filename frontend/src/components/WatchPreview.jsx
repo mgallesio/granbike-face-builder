@@ -21,10 +21,11 @@ const COLOR_MAP = {
 const W = 260;
 const H = 260;
 
-export default function WatchPreview({ config, photoUrl }) {
+export default function WatchPreview({ config, photoUrl, onMoveItem }) {
   const canvasRef = useRef(null);
   const photoRef = useRef(null);
   const logosquadraRef = useRef(null);
+  const dragRef = useRef(null);
 
   // Precarica immagine quando cambia
   useEffect(() => {
@@ -258,7 +259,104 @@ export default function WatchPreview({ config, photoUrl }) {
     return () => cancelAnimationFrame(raf);
   }, [config, photoUrl]);
 
-  return <canvas className="watch-canvas" ref={canvasRef} width={W} height={H} />;
+  function pointerToCanvas(e) {
+    const rect = canvasRef.current.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * W,
+      y: ((e.clientY - rect.top) / rect.height) * H,
+    };
+  }
+
+  function handlePointerDown(e) {
+    if (!onMoveItem) return;
+    const point = pointerToCanvas(e);
+    const item = findDraggableItem(config, logosquadraRef.current, point);
+    if (!item) return;
+    e.preventDefault();
+    canvasRef.current.setPointerCapture(e.pointerId);
+    dragRef.current = {
+      ...item,
+      offsetX: point.x - item.x,
+      offsetY: point.y - item.y,
+    };
+  }
+
+  function handlePointerMove(e) {
+    const drag = dragRef.current;
+    if (!drag || !onMoveItem) return;
+    e.preventDefault();
+    const point = pointerToCanvas(e);
+    onMoveItem(drag.xKey, drag.yKey, clamp(point.x - drag.offsetX, 10, 250), clamp(point.y - drag.offsetY, 0, 250));
+  }
+
+  function handlePointerUp(e) {
+    if (dragRef.current && canvasRef.current.hasPointerCapture(e.pointerId)) {
+      canvasRef.current.releasePointerCapture(e.pointerId);
+    }
+    dragRef.current = null;
+  }
+
+  return (
+    <canvas
+      className="watch-canvas draggable"
+      ref={canvasRef}
+      width={W}
+      height={H}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    />
+  );
+}
+
+function findDraggableItem(config, logoImage, point) {
+  const items = [];
+  if (logoImage) {
+    const logoScale = (config.logoScale ?? 100) / 100;
+    const w = 160 * logoScale;
+    const h = 62 * logoScale;
+    items.push({
+      xKey: "logoX",
+      yKey: "logoY",
+      x: config.logoX ?? 130,
+      y: config.logoY ?? 192,
+      hit: { type: "rect", x: (config.logoX ?? 130) - w / 2, y: config.logoY ?? 192, w, h },
+    });
+  }
+  if (config.showHr) items.push(pointItem("hrX", "hrY", config.hrX ?? 130, config.hrY ?? 50, 34));
+  if (config.showBattery) items.push(pointItem("batteryX", "batteryY", config.batteryX ?? 130, config.batteryY ?? 165, 34));
+  if (config.showDigitalTime) items.push(pointItem("digitalTimeX", "digitalTimeY", config.digitalTimeX ?? 130, config.digitalTimeY ?? 96, 48));
+  if (config.showDate) items.push(pointItem("dateX", "dateY", config.dateX ?? 130, config.dateY ?? 120, 28));
+  if (config.showAltitude) items.push(pointItem("altitudeX", "altitudeY", config.altitudeX ?? 210, config.altitudeY ?? 184, 30));
+  if (config.showSteps) items.push(pointItem("stepsX", "stepsY", config.stepsX ?? 130, config.stepsY ?? 218, 30));
+  if (config.showCalories) items.push(pointItem("caloriesX", "caloriesY", config.caloriesX ?? 210, config.caloriesY ?? 74, 38));
+  if (config.memorialLine1) items.push(pointItem("text1X", "text1Y", config.text1X ?? 130, config.text1Y ?? 130, 44));
+  if (config.memorialLine2) items.push(pointItem("text2X", "text2Y", config.text2X ?? 130, config.text2Y ?? 152, 44));
+
+  return items.reverse().find((item) => hitTest(item, point)) || null;
+}
+
+function pointItem(xKey, yKey, x, y, radius) {
+  return { xKey, yKey, x, y, hit: { type: "circle", x, y, radius } };
+}
+
+function hitTest(item, point) {
+  if (item.hit.type === "rect") {
+    return (
+      point.x >= item.hit.x &&
+      point.x <= item.hit.x + item.hit.w &&
+      point.y >= item.hit.y &&
+      point.y <= item.hit.y + item.hit.h
+    );
+  }
+  const dx = point.x - item.hit.x;
+  const dy = point.y - item.hit.y;
+  return Math.sqrt(dx * dx + dy * dy) <= item.hit.radius;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, Math.round(value)));
 }
 
 function drawHand(ctx, cx, cy, angle, length, width, color) {
