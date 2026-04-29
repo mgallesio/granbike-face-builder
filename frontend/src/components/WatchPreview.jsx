@@ -79,7 +79,11 @@ export default function WatchPreview({ config, photoUrl }) {
         ctx.font = "bold 20px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        const numberRadius = config.showHands === false ? 112 : 96;
+        const numberRadius = config.showTicks === false
+          ? 118
+          : config.showHands === false
+            ? 112
+            : 96;
         const yAdjust = config.showHands === false ? 8 : 8;
         if (config.numbersMode === "all") {
           for (let n = 1; n <= 12; n += 1) {
