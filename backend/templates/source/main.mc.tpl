@@ -6,6 +6,7 @@ using Toybox.Time.Gregorian;
 using Toybox.Math;
 using Toybox.System;
 using Toybox.ActivityMonitor;
+using Toybox.SensorHistory;
 
 class Main extends Application.AppBase {
     function initialize() {
@@ -45,6 +46,9 @@ class MainView extends WatchUi.WatchFace {
         {{#SHOW_BATTERY}}drawBattery(dc, {{BATTERY_X}}, {{BATTERY_Y}});{{/SHOW_BATTERY}}
         {{#SHOW_DIGITAL_TIME}}drawDigitalTime(dc, {{DIGITAL_TIME_X}}, {{DIGITAL_TIME_Y}});{{/SHOW_DIGITAL_TIME}}
         {{#SHOW_DATE}}drawDate(dc, {{DATE_X}}, {{DATE_Y}});{{/SHOW_DATE}}
+        {{#SHOW_ALTITUDE}}drawAltitude(dc, {{ALTITUDE_X}}, {{ALTITUDE_Y}});{{/SHOW_ALTITUDE}}
+        {{#SHOW_STEPS}}drawSteps(dc, {{STEPS_X}}, {{STEPS_Y}});{{/SHOW_STEPS}}
+        {{#SHOW_CALORIES}}drawCalories(dc, {{CALORIES_X}}, {{CALORIES_Y}});{{/SHOW_CALORIES}}
 
         {{#MEMORIAL_LINE1}}drawTextWithShadow(dc, {{TEXT1_X}}, {{TEXT1_Y}}, Graphics.FONT_MEDIUM, "{{MEMORIAL_LINE1}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE1}}
         {{#MEMORIAL_LINE2}}drawTextWithShadow(dc, {{TEXT2_X}}, {{TEXT2_Y}}, Graphics.FONT_SMALL, "{{MEMORIAL_LINE2}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE2}}
@@ -66,6 +70,9 @@ class MainView extends WatchUi.WatchFace {
         {{#SHOW_TICKS}}drawTicks(dc, cx, cy);{{/SHOW_TICKS}}
         {{#SHOW_DIGITAL_TIME}}drawDigitalTime(dc, {{DIGITAL_TIME_X}}, {{DIGITAL_TIME_Y}});{{/SHOW_DIGITAL_TIME}}
         {{#SHOW_DATE}}drawDate(dc, {{DATE_X}}, {{DATE_Y}});{{/SHOW_DATE}}
+        {{#SHOW_ALTITUDE}}drawAltitude(dc, {{ALTITUDE_X}}, {{ALTITUDE_Y}});{{/SHOW_ALTITUDE}}
+        {{#SHOW_STEPS}}drawSteps(dc, {{STEPS_X}}, {{STEPS_Y}});{{/SHOW_STEPS}}
+        {{#SHOW_CALORIES}}drawCalories(dc, {{CALORIES_X}}, {{CALORIES_Y}});{{/SHOW_CALORIES}}
         {{#MEMORIAL_LINE1}}drawTextWithShadow(dc, {{TEXT1_X}}, {{TEXT1_Y}}, Graphics.FONT_MEDIUM, "{{MEMORIAL_LINE1}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE1}}
         {{#MEMORIAL_LINE2}}drawTextWithShadow(dc, {{TEXT2_X}}, {{TEXT2_Y}}, Graphics.FONT_SMALL, "{{MEMORIAL_LINE2}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE2}}
         drawAllHands(dc, cx, cy);
@@ -236,6 +243,44 @@ class MainView extends WatchUi.WatchFace {
         drawTextWithShadow(dc, x, y, Graphics.FONT_SMALL, txt, Graphics.COLOR_WHITE);
     }
     {{/SHOW_DATE}}
+
+    {{#SHOW_ALTITUDE}}
+    function drawAltitude(dc, x, y) {
+        var txt = "--m";
+        if (Toybox.SensorHistory has :getElevationHistory) {
+            var iter = SensorHistory.getElevationHistory({});
+            if (iter != null) {
+                var sample = iter.next();
+                if (sample != null && sample.data != null) {
+                    txt = sample.data.toNumber().toString() + "m";
+                }
+            }
+        }
+        drawTextWithShadow(dc, x, y, Graphics.FONT_SMALL, txt, Graphics.COLOR_WHITE);
+    }
+    {{/SHOW_ALTITUDE}}
+
+    {{#SHOW_STEPS}}
+    function drawSteps(dc, x, y) {
+        var info = ActivityMonitor.getInfo();
+        var txt = "--";
+        if (info != null && info has :steps && info.steps != null) {
+            txt = info.steps.toString();
+        }
+        drawTextWithShadow(dc, x, y, Graphics.FONT_SMALL, txt, Graphics.COLOR_{{ACCENT_COLOR}});
+    }
+    {{/SHOW_STEPS}}
+
+    {{#SHOW_CALORIES}}
+    function drawCalories(dc, x, y) {
+        var info = ActivityMonitor.getInfo();
+        var txt = "-- kcal";
+        if (info != null && info has :calories && info.calories != null) {
+            txt = info.calories.toString() + " kcal";
+        }
+        drawTextWithShadow(dc, x, y, Graphics.FONT_TINY, txt, Graphics.COLOR_WHITE);
+    }
+    {{/SHOW_CALORIES}}
 
     function drawAllHands(dc, cx, cy) {
         var now  = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);

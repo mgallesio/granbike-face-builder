@@ -40,6 +40,9 @@ export default function App() {
     showHands: true,
     showDigitalTime: false,
     showDate: false,
+    showAltitude: false,
+    showSteps: false,
+    showCalories: false,
     showSeconds: true,
     showTicks: true,
     showNumbers: true,
@@ -52,6 +55,12 @@ export default function App() {
     digitalTimeY: 96,
     dateX: 130,
     dateY: 120,
+    altitudeX: 210,
+    altitudeY: 184,
+    stepsX: 130,
+    stepsY: 218,
+    caloriesX: 210,
+    caloriesY: 74,
     text1X: 130,
     text1Y: 130,
     text2X: 130,
@@ -249,6 +258,15 @@ export default function App() {
           <Toggle checked={config.showDate} onChange={(value) => update("showDate", value)}>
             Data
           </Toggle>
+          <Toggle checked={config.showAltitude} onChange={(value) => update("showAltitude", value)}>
+            Altitudine
+          </Toggle>
+          <Toggle checked={config.showSteps} onChange={(value) => update("showSteps", value)}>
+            Passi
+          </Toggle>
+          <Toggle checked={config.showCalories} onChange={(value) => update("showCalories", value)}>
+            Calorie
+          </Toggle>
           <div className="field">
             <label>Numeri</label>
             <select
@@ -303,6 +321,27 @@ export default function App() {
             y={config.dateY}
             onX={(value) => update("dateX", value)}
             onY={(value) => update("dateY", value)}
+          />
+          <PositionControl
+            label="Altitudine"
+            x={config.altitudeX}
+            y={config.altitudeY}
+            onX={(value) => update("altitudeX", value)}
+            onY={(value) => update("altitudeY", value)}
+          />
+          <PositionControl
+            label="Passi"
+            x={config.stepsX}
+            y={config.stepsY}
+            onX={(value) => update("stepsX", value)}
+            onY={(value) => update("stepsY", value)}
+          />
+          <PositionControl
+            label="Calorie"
+            x={config.caloriesX}
+            y={config.caloriesY}
+            onX={(value) => update("caloriesX", value)}
+            onY={(value) => update("caloriesY", value)}
           />
           <PositionControl
             label="Testo riga 1"

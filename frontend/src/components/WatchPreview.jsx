@@ -167,6 +167,39 @@ export default function WatchPreview({ config, photoUrl }) {
         );
       }
 
+      if (config.showAltitude) {
+        drawShadowText(
+          ctx,
+          "325m",
+          config.altitudeX ?? 210,
+          config.altitudeY ?? 184,
+          "bold 16px Arial",
+          "#ffffff"
+        );
+      }
+
+      if (config.showSteps) {
+        drawShadowText(
+          ctx,
+          "8200",
+          config.stepsX ?? 130,
+          config.stepsY ?? 218,
+          "bold 16px Arial",
+          accent
+        );
+      }
+
+      if (config.showCalories) {
+        drawShadowText(
+          ctx,
+          "540 kcal",
+          config.caloriesX ?? 210,
+          config.caloriesY ?? 74,
+          "bold 15px Arial",
+          "#ffffff"
+        );
+      }
+
       // Memorial text
       if (config.memorialLine1) {
         drawShadowText(

@@ -4,7 +4,14 @@
         <iq:products>
             <iq:product id="{{DEVICE}}"/>
         </iq:products>
+        {{#SHOW_ALTITUDE}}
+        <iq:permissions>
+            <iq:uses-permission id="SensorHistory"/>
+        </iq:permissions>
+        {{/SHOW_ALTITUDE}}
+        {{^SHOW_ALTITUDE}}
         <iq:permissions/>
+        {{/SHOW_ALTITUDE}}
         <iq:languages>
             <iq:language>eng</iq:language>
             <iq:language>ita</iq:language>

@@ -162,6 +162,9 @@ export async function buildFace(config, photoPath, tmpBase) {
     SHOW_HANDS: config.showHands !== false,
     SHOW_DIGITAL_TIME: !!config.showDigitalTime,
     SHOW_DATE: !!config.showDate,
+    SHOW_ALTITUDE: !!config.showAltitude,
+    SHOW_STEPS: !!config.showSteps,
+    SHOW_CALORIES: !!config.showCalories,
     SHOW_TICKS: config.showTicks !== false, // default true
     SHOW_NUMBERS: numbersMode !== "none",
     SHOW_CARDINAL_NUMBERS: numbersMode === "cardinal",
@@ -174,6 +177,12 @@ export async function buildFace(config, photoPath, tmpBase) {
     DIGITAL_TIME_Y: safeNumber(config.digitalTimeY, 96),
     DATE_X: safeNumber(config.dateX, 130),
     DATE_Y: safeNumber(config.dateY, 120),
+    ALTITUDE_X: safeNumber(config.altitudeX, 210),
+    ALTITUDE_Y: safeNumber(config.altitudeY, 184),
+    STEPS_X: safeNumber(config.stepsX, 130),
+    STEPS_Y: safeNumber(config.stepsY, 218),
+    CALORIES_X: safeNumber(config.caloriesX, 210),
+    CALORIES_Y: safeNumber(config.caloriesY, 74),
     TEXT1_X: safeNumber(config.text1X, 130),
     TEXT1_Y: safeNumber(config.text1Y, 130),
     TEXT2_X: safeNumber(config.text2X, 130),
@@ -210,7 +219,11 @@ export async function buildFace(config, photoPath, tmpBase) {
   // Render manifest.xml
   const manTplPath = path.join(buildDir, "manifest.xml.tpl");
   const manTpl = await fs.readFile(manTplPath, "utf8");
-  const manXml = Mustache.render(manTpl, { APP_ID: appId, DEVICE: device });
+  const manXml = Mustache.render(manTpl, {
+    APP_ID: appId,
+    DEVICE: device,
+    SHOW_ALTITUDE: vars.SHOW_ALTITUDE,
+  });
   await fs.writeFile(path.join(buildDir, "manifest.xml"), manXml);
   await fs.unlink(manTplPath);
 
