@@ -2,9 +2,13 @@ services:
   - type: web
     name: granbike-face-builder
     env: docker
-    plan: free
+    plan: starter
     autoDeploy: true
     healthCheckPath: /api/health
+    disk:
+      name: team-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production

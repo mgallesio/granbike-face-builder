@@ -1,12 +1,12 @@
 # Deploy su Render
 
-Questa configurazione pubblica la web app su Render Free usando Docker.
+Questa configurazione pubblica la web app su Render usando Docker.
 
 ## Soluzione consigliata
 
-Per far vedere il configuratore gratuitamente usa **Render Free Web Service con Docker**.
+Per far vedere il configuratore con dati salvati usa **Render Web Service con Docker e Disk persistente**.
 
-La demo gratuita mostra:
+L'app mostra:
 
 - configuratore completo;
 - anteprima live;
@@ -16,9 +16,20 @@ La demo gratuita mostra:
 
 La generazione `.prg` funziona solo se aggiungi anche SDK Garmin e developer key come variabili private.
 
-## Demo visuale gratis
+## Dati persistenti
 
-Funziona subito:
+Squadre, loghi e default vengono salvati nel filesystem del server. Su Render il filesystem normale viene perso a ogni deploy/riavvio, quindi `render.yaml` monta un disco persistente:
+
+- `TEAM_DATA_DIR=/var/data`
+- disk `team-data`
+- mount path `/var/data`
+- size `1 GB`
+
+Con questa configurazione i file finiscono in `/var/data/data` e restano anche dopo i deploy.
+
+Nota: i dischi persistenti non sono disponibili sul piano Free. Il servizio usa `plan: starter`.
+
+## Deploy
 
 1. Crea una repo GitHub con questa cartella.
 2. Fai push della repo.
@@ -48,5 +59,5 @@ Su Windows puoi creare il base64 della key con:
 ## Note
 
 - Render Free va in sleep dopo inattivita, quindi il primo accesso puo essere lento.
-- Il filesystem Render Free e temporaneo: va bene per questa app, perche i `.prg` vengono creati e scaricati al volo.
+- Senza disco persistente, squadre e loghi caricati vengono persi al deploy.
 - Il deploy usa `Dockerfile`, Node.js 24 e Java.
