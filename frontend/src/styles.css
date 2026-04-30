@@ -306,6 +306,13 @@ canvas.draggable:active {
   font-size: 14px;
 }
 
+.admin-default-top {
+  margin: 0 0 14px;
+  padding: 10px 0 14px;
+  border-top: 0;
+  border-bottom: 1px solid #33363d;
+}
+
 .secondary-btn {
   margin-top: 10px;
   padding: 7px 11px;

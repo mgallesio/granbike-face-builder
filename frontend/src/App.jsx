@@ -284,6 +284,7 @@ function BuilderApp({ route }) {
     setBusy(true);
     setStatus({ msg: "Salvataggio impostazioni default squadra...", kind: "" });
     try {
+      if (!adminPassword) throw new Error("Inserisci la password backoffice");
       sessionStorage.setItem("adminPassword", adminPassword);
       if (isAdminSettings && teamLogoId && teamLogoId !== team.logoId) {
         const savedTeam = await saveTeamLogoSelection();
@@ -318,6 +319,7 @@ function BuilderApp({ route }) {
     setBusy(true);
     setStatus({ msg: "Salvataggio logo squadra...", kind: "" });
     try {
+      if (!adminPassword) throw new Error("Inserisci la password backoffice");
       sessionStorage.setItem("adminPassword", adminPassword);
       const savedTeam = await saveTeamLogoSelection();
       setTeam(savedTeam);
@@ -378,6 +380,24 @@ function BuilderApp({ route }) {
             </div>
           )}
           {isAdminSettings && (
+            <div className="admin-default-box admin-default-top">
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="Password backoffice"
+              />
+              <button
+                className="btn"
+                onClick={handleSaveTeamDefaults}
+                type="button"
+                disabled={busy}
+              >
+                Salva impostazioni default
+              </button>
+            </div>
+          )}
+          {isAdminSettings && (
             <div className="team-logo-admin">
               <div className="field">
                 <label>Logo squadra dalla lista</label>
@@ -395,7 +415,7 @@ function BuilderApp({ route }) {
                 className="secondary-btn"
                 onClick={handleSaveTeamLogo}
                 type="button"
-                disabled={busy || !adminPassword || !teamLogoId}
+                disabled={busy || !teamLogoId}
               >
                 Salva logo squadra
               </button>
@@ -660,7 +680,7 @@ function BuilderApp({ route }) {
                 className="secondary-action"
                 onClick={handleSaveTeamDefaults}
                 type="button"
-                disabled={busy || !adminPassword}
+                disabled={busy}
               >
                 Salva impostazioni default
               </button>
