@@ -351,6 +351,13 @@ canvas.draggable:active {
   color: #ffd33d;
 }
 
+.team-banner a {
+  color: #ffd33d;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .team-banner span,
 .muted {
   color: #b8b8b4;
@@ -432,7 +439,7 @@ canvas.draggable:active {
 
 .team-card {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(220px, 1.4fr) 96px auto;
+  grid-template-columns: minmax(150px, 1fr) minmax(200px, 1.2fr) 88px auto auto;
   align-items: center;
   gap: 14px;
   padding: 12px;
@@ -491,6 +498,13 @@ canvas.draggable:active {
 
 .team-card a {
   overflow-wrap: anywhere;
+}
+
+.team-card .team-action-link {
+  color: #f2f2f0;
+  font-size: 13px;
+  text-align: center;
+  text-decoration: none;
 }
 
 .team-card img {

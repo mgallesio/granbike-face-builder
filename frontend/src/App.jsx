@@ -84,6 +84,8 @@ export default function App() {
 }
 
 function BuilderApp({ route }) {
+  const isTeamRoute = route.mode === "team" || route.mode === "admin-team-settings";
+  const isAdminSettings = route.mode === "admin-team-settings";
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [team, setTeam] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -132,7 +134,7 @@ function BuilderApp({ route }) {
   }, []);
 
   useEffect(() => {
-    if (route.mode !== "team") return;
+    if (!isTeamRoute) return;
     let active = true;
     fetch(`/api/teams/${encodeURIComponent(route.slug)}`)
       .then((res) => {
@@ -160,10 +162,10 @@ function BuilderApp({ route }) {
     return () => {
       active = false;
     };
-  }, [route.mode, route.slug]);
+  }, [isTeamRoute, route.slug]);
 
   useEffect(() => {
-    if (route.mode !== "team") return;
+    if (!isAdminSettings) return;
     let active = true;
     fetch("/api/logos")
       .then((res) => res.json())
@@ -176,7 +178,7 @@ function BuilderApp({ route }) {
     return () => {
       active = false;
     };
-  }, [route.mode]);
+  }, [isAdminSettings]);
 
   function update(key, value) {
     setConfig((current) => ({ ...current, [key]: value }));
@@ -283,6 +285,11 @@ function BuilderApp({ route }) {
     setStatus({ msg: "Salvataggio impostazioni default squadra...", kind: "" });
     try {
       sessionStorage.setItem("adminPassword", adminPassword);
+      if (isAdminSettings && teamLogoId && teamLogoId !== team.logoId) {
+        const savedTeam = await saveTeamLogoSelection();
+        setTeam(savedTeam);
+        setConfig((current) => ({ ...current, logoCacheKey: Date.now() }));
+      }
       const res = await fetch(`/api/admin/teams/${encodeURIComponent(team.slug)}/defaults`, {
         method: "POST",
         headers: {
@@ -311,25 +318,8 @@ function BuilderApp({ route }) {
     setBusy(true);
     setStatus({ msg: "Salvataggio logo squadra...", kind: "" });
     try {
-      if (!teamLogoId) throw new Error("Seleziona un logo dalla lista");
       sessionStorage.setItem("adminPassword", adminPassword);
-      const fd = new FormData();
-      fd.append("name", team.name);
-      fd.append("slug", team.slug);
-      fd.append("prgFileName", team.prgFileName);
-      fd.append("logoId", teamLogoId);
-      fd.append("backgroundColor", config.backgroundColor || team.backgroundColor || "BLACK");
-      fd.append("accentColor", config.accentColor || team.accentColor || "YELLOW");
-      const res = await fetch("/api/admin/teams", {
-        method: "POST",
-        body: fd,
-        headers: { "x-admin-password": adminPassword },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
-        throw new Error(err.error || res.statusText);
-      }
-      const savedTeam = await res.json();
+      const savedTeam = await saveTeamLogoSelection();
       setTeam(savedTeam);
       setConfig((current) => ({ ...current, logoCacheKey: Date.now() }));
       setStatus({ msg: "Logo squadra salvato e anteprima aggiornata.", kind: "ok" });
@@ -340,13 +330,40 @@ function BuilderApp({ route }) {
     }
   }
 
+  async function saveTeamLogoSelection() {
+    if (!teamLogoId) throw new Error("Seleziona un logo dalla lista");
+    const fd = new FormData();
+    fd.append("name", team.name);
+    fd.append("slug", team.slug);
+    fd.append("prgFileName", team.prgFileName);
+    fd.append("logoId", teamLogoId);
+    fd.append("backgroundColor", config.backgroundColor || team.backgroundColor || "BLACK");
+    fd.append("accentColor", config.accentColor || team.accentColor || "YELLOW");
+    const res = await fetch("/api/admin/teams", {
+      method: "POST",
+      body: fd,
+      headers: { "x-admin-password": adminPassword },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
+      throw new Error(err.error || res.statusText);
+    }
+    return res.json();
+  }
+
   return (
     <div className="app">
       <aside className="sidebar">
         <header className="topbar">
           <div>
             <h1>Granbike Face Builder</h1>
-            <p>{team ? `${team.name} - link squadra` : "Generatore web per watch face Garmin Connect IQ."}</p>
+            <p>
+              {team
+                ? isAdminSettings
+                  ? `${team.name} - impostazioni default`
+                  : `${team.name} - link squadra`
+                : "Generatore web per watch face Garmin Connect IQ."}
+            </p>
           </div>
           <span className={`api-dot ${apiReady ? "ok" : "error"}`} title={apiReady ? "API online" : "API offline"} />
         </header>
@@ -357,9 +374,10 @@ function BuilderApp({ route }) {
             <div className="team-banner">
               <strong>{team.name}</strong>
               <span>File: {team.prgFileName}.prg</span>
+              {isAdminSettings && <a href="/admin">Torna al backoffice</a>}
             </div>
           )}
-          {team && (
+          {isAdminSettings && (
             <div className="team-logo-admin">
               <div className="field">
                 <label>Logo squadra dalla lista</label>
@@ -630,7 +648,7 @@ function BuilderApp({ route }) {
           >
             Scarica pacchetto beta Garmin (.iq)
           </button>
-          {team && (
+          {isAdminSettings && (
             <div className="admin-default-box">
               <input
                 type="password"
@@ -644,7 +662,7 @@ function BuilderApp({ route }) {
                 type="button"
                 disabled={busy || !adminPassword}
               >
-                Salva default squadra
+                Salva impostazioni default
               </button>
             </div>
           )}
@@ -927,7 +945,7 @@ function AdminApp() {
 
       <main className="admin-list">
         <section className="panel">
-          <h2>Link squadre</h2>
+          <h2>Squadre create</h2>
           {teams.length === 0 && <p className="muted">Nessuna squadra configurata.</p>}
           <div className="team-list">
             {teams.map((team) => (
@@ -939,8 +957,11 @@ function AdminApp() {
                 <a href={`/team/${team.slug}`}>{window.location.origin}/team/{team.slug}</a>
                 {team.hasLogo && <img src={`/api/teams/${team.slug}/logo`} alt="" />}
                 <button className="secondary-btn" type="button" onClick={() => editTeam(team)}>
-                  Modifica
+                  Modifica dati
                 </button>
+                <a className="secondary-btn team-action-link" href={`/admin/team/${team.slug}/settings`}>
+                  Imposta default
+                </a>
               </article>
             ))}
           </div>
@@ -1057,6 +1078,13 @@ function safeFileName(name) {
 
 function getRoute() {
   const path = window.location.pathname;
+  const adminTeamMatch = path.match(/^\/admin\/team\/([a-z0-9-]+)\/settings/i);
+  if (adminTeamMatch) {
+    return {
+      mode: "admin-team-settings",
+      slug: adminTeamMatch[1].toLowerCase(),
+    };
+  }
   if (path === "/admin" || path.startsWith("/admin/")) return { mode: "admin" };
   const match = path.match(/^\/team\/([a-z0-9-]+)/i);
   if (match) return { mode: "team", slug: match[1].toLowerCase() };
