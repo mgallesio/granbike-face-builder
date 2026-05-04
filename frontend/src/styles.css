@@ -209,6 +209,14 @@ h1 {
   box-shadow: 0 0 0 2px #101113, 0 0 0 4px #ffd33d;
 }
 
+.permission-swatches .permission-swatch {
+  opacity: 0.35;
+}
+
+.permission-swatches .permission-swatch.selected {
+  opacity: 1;
+}
+
 .preview-area {
   display: flex;
   flex-direction: column;

@@ -166,9 +166,11 @@ app.post("/api/admin/teams", requireAdmin, upload.single("logo"), async (req, re
   }
 });
 
-app.post("/api/admin/teams/:slug/defaults", requireAdmin, async (req, res) => {
+app.post("/api/admin/teams/:slug/defaults", requireTeamManager, async (req, res) => {
   try {
-    const team = await teamStore.saveTeamDefaults(req.params.slug, req.body?.config || {});
+    const team = await teamStore.saveTeamDefaults(req.params.slug, req.body?.config || {}, {
+      allowedBackgroundColors: req.body?.allowedBackgroundColors,
+    });
     res.json(publicTeam(team));
   } catch (e) {
     res.status(400).json({ error: String(e.message || e) });
@@ -282,7 +284,14 @@ async function applyTeamConfig(config) {
   config.name = team.name;
   config.prgFileName = team.prgFileName;
   config.logoName = "logosquadra";
-  if (team.backgroundColor) config.backgroundColor = team.backgroundColor;
+  const allowedBackgroundColors = Array.isArray(team.allowedBackgroundColors)
+    ? team.allowedBackgroundColors
+    : [];
+  if (allowedBackgroundColors.length > 0 && !allowedBackgroundColors.includes(config.backgroundColor)) {
+    config.backgroundColor = allowedBackgroundColors[0];
+  } else if (team.backgroundColor && !config.backgroundColor) {
+    config.backgroundColor = team.backgroundColor;
+  }
   if (team.accentColor) config.accentColor = team.accentColor;
   if (!logoPath) throw new Error(`Logo non configurato per la squadra ${team.name}`);
   config.teamLogoPath = logoPath;
@@ -306,4 +315,20 @@ function requireAdmin(req, res, next) {
     return res.status(401).json({ error: "Password backoffice non valida" });
   }
   next();
+}
+
+async function requireTeamManager(req, res, next) {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminPassword && req.get("x-admin-password") === adminPassword) {
+    return next();
+  }
+  try {
+    const ok = await teamStore.verifyTeamManagerPassword(req.params.slug, req.get("x-team-password"));
+    if (!ok) {
+      return res.status(401).json({ error: "Password squadra non valida" });
+    }
+    next();
+  } catch (e) {
+    res.status(401).json({ error: String(e.message || e) });
+  }
 }

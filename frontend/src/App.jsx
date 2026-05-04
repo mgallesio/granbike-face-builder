@@ -13,6 +13,7 @@ const COLORS = [
   { name: "PINK", label: "Rosa", css: "#ff69b4" },
   { name: "LT_GRAY", label: "Grigio", css: "#aaaaaa" },
 ];
+const COLOR_NAMES = new Set(COLORS.map((color) => color.name));
 
 const DEVICES = [
   { id: "fenix7pro", label: "fenix 7 Pro / Pro Solar" },
@@ -99,6 +100,7 @@ function BuilderApp({ route }) {
   const [adminPassword, setAdminPassword] = useState(() => sessionStorage.getItem("adminPassword") || "");
   const [availableLogos, setAvailableLogos] = useState([]);
   const [teamLogoId, setTeamLogoId] = useState("");
+  const [allowedBackgroundColors, setAllowedBackgroundColors] = useState(COLORS.map((color) => color.name));
 
   const photoUrl = useMemo(
     () => (photoFile ? URL.createObjectURL(photoFile) : null),
@@ -143,15 +145,21 @@ function BuilderApp({ route }) {
       })
       .then((data) => {
         if (!active) return;
+        const allowedColors = normalizeAllowedColors(data.allowedBackgroundColors);
+        const defaultBackground = data.defaultConfig?.backgroundColor || data.backgroundColor || DEFAULT_CONFIG.backgroundColor;
+        const backgroundColor = allowedColors.includes(defaultBackground)
+          ? defaultBackground
+          : allowedColors[0];
         setTeam(data);
         setTeamLogoId(data.logoId || "");
+        setAllowedBackgroundColors(allowedColors);
         setConfig((current) => ({
           ...current,
           ...(data.defaultConfig || {}),
           name: data.name,
           prgFileName: data.prgFileName,
           teamSlug: data.slug,
-          backgroundColor: data.backgroundColor || current.backgroundColor,
+          backgroundColor,
           accentColor: data.accentColor || current.accentColor,
         }));
       })
@@ -284,20 +292,16 @@ function BuilderApp({ route }) {
     setBusy(true);
     setStatus({ msg: "Salvataggio impostazioni default squadra...", kind: "" });
     try {
-      if (!adminPassword) throw new Error("Inserisci la password backoffice");
+      if (!adminPassword) throw new Error("Inserisci la password squadra o backoffice");
       sessionStorage.setItem("adminPassword", adminPassword);
-      if (isAdminSettings && teamLogoId && teamLogoId !== team.logoId) {
-        const savedTeam = await saveTeamLogoSelection();
-        setTeam(savedTeam);
-        setConfig((current) => ({ ...current, logoCacheKey: Date.now() }));
-      }
       const res = await fetch(`/api/admin/teams/${encodeURIComponent(team.slug)}/defaults`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-admin-password": adminPassword,
+          "x-team-password": adminPassword,
         },
-        body: JSON.stringify({ config }),
+        body: JSON.stringify({ config, allowedBackgroundColors }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
@@ -385,7 +389,7 @@ function BuilderApp({ route }) {
                 type="password"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="Password backoffice"
+                placeholder="Password squadra o backoffice"
               />
               <button
                 className="btn"
@@ -417,7 +421,7 @@ function BuilderApp({ route }) {
                 type="button"
                 disabled={busy || !teamLogoId}
               >
-                Salva logo squadra
+                Salva logo squadra (backoffice)
               </button>
             </div>
           )}
@@ -465,7 +469,20 @@ function BuilderApp({ route }) {
             label="Sfondo"
             value={config.backgroundColor}
             onChange={(value) => update("backgroundColor", value)}
+            colors={isTeamRoute ? colorOptions(allowedBackgroundColors) : COLORS}
           />
+          {isAdminSettings && (
+            <ColorPermissionPicker
+              label="Colori sfondo utilizzabili dalla squadra"
+              value={allowedBackgroundColors}
+              onChange={(colors) => {
+                setAllowedBackgroundColors(colors);
+                if (!colors.includes(config.backgroundColor)) {
+                  update("backgroundColor", colors[0]);
+                }
+              }}
+            />
+          )}
           <ColorPicker
             label="Lancette ore/minuti e tacche"
             value={config.accentColor}
@@ -674,7 +691,7 @@ function BuilderApp({ route }) {
                 type="password"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="Password backoffice"
+                placeholder="Password squadra o backoffice"
               />
               <button
                 className="secondary-action"
@@ -708,6 +725,8 @@ function AdminApp() {
     slug: "",
     prgFileName: "",
     logoId: "",
+    managerPassword: "",
+    allowedBackgroundColors: COLORS.map((color) => color.name),
     backgroundColor: "BLACK",
     accentColor: "YELLOW",
   });
@@ -759,6 +778,8 @@ function AdminApp() {
       slug: team.slug,
       prgFileName: team.prgFileName,
       logoId: team.logoId || "",
+      managerPassword: "",
+      allowedBackgroundColors: normalizeAllowedColors(team.allowedBackgroundColors),
       backgroundColor: team.backgroundColor || "BLACK",
       accentColor: team.accentColor || "YELLOW",
     });
@@ -770,7 +791,9 @@ function AdminApp() {
     setStatus({ msg: "Salvataggio squadra...", kind: "" });
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([key, value]) => fd.append(key, value));
+      Object.entries(form).forEach(([key, value]) => {
+        fd.append(key, Array.isArray(value) ? JSON.stringify(value) : value);
+      });
       if (logoFile) fd.append("logo", logoFile);
       sessionStorage.setItem("adminPassword", password);
       const res = await fetch("/api/admin/teams", {
@@ -789,6 +812,8 @@ function AdminApp() {
         slug: "",
         prgFileName: "",
         logoId: "",
+        managerPassword: "",
+        allowedBackgroundColors: COLORS.map((color) => color.name),
         backgroundColor: "BLACK",
         accentColor: "YELLOW",
       });
@@ -889,6 +914,15 @@ function AdminApp() {
             <input value={form.prgFileName} onChange={(e) => updateForm("prgFileName", e.target.value)} placeholder="GranbikeTeamFace" />
           </div>
           <div className="field">
+            <label>Password responsabile squadra</label>
+            <input
+              type="password"
+              value={form.managerPassword}
+              onChange={(e) => updateForm("managerPassword", e.target.value)}
+              placeholder={form.slug ? "Lascia vuoto per non cambiarla" : "Password per impostazioni squadra"}
+            />
+          </div>
+          <div className="field">
             <label>Logo salvato</label>
             <select value={form.logoId} onChange={(e) => updateForm("logoId", e.target.value)}>
               <option value="">Nessun logo salvato</option>
@@ -914,6 +948,14 @@ function AdminApp() {
             </div>
           )}
           <ColorPicker label="Sfondo default" value={form.backgroundColor} onChange={(value) => updateForm("backgroundColor", value)} />
+          <ColorPermissionPicker
+            label="Colori sfondo concessi"
+            value={form.allowedBackgroundColors}
+            onChange={(colors) => {
+              updateForm("allowedBackgroundColors", colors);
+              if (!colors.includes(form.backgroundColor)) updateForm("backgroundColor", colors[0]);
+            }}
+          />
           <ColorPicker label="Colore default" value={form.accentColor} onChange={(value) => updateForm("accentColor", value)} />
           <button className="btn" type="submit">Salva squadra</button>
           <div className={`status ${status.kind}`}>{status.msg}</div>
@@ -973,6 +1015,7 @@ function AdminApp() {
                 <div>
                   <strong>{team.name}</strong>
                   <span>{team.prgFileName}.prg</span>
+                  <span>{team.hasManagerPassword ? "Password squadra configurata" : "Password squadra mancante"}</span>
                 </div>
                 <a href={`/team/${team.slug}`}>{window.location.origin}/team/{team.slug}</a>
                 {team.hasLogo && <img src={`/api/teams/${team.slug}/logo`} alt="" />}
@@ -1006,12 +1049,12 @@ function AdminApp() {
   );
 }
 
-function ColorPicker({ label, value, onChange }) {
+function ColorPicker({ label, value, onChange, colors = COLORS }) {
   return (
     <div className="field">
       <label>{label}</label>
       <div className="swatches">
-        {COLORS.map((color) => (
+        {colors.map((color) => (
           <button
             key={color.name}
             type="button"
@@ -1020,6 +1063,35 @@ function ColorPicker({ label, value, onChange }) {
             title={color.label}
             aria-label={color.label}
             onClick={() => onChange(color.name)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ColorPermissionPicker({ label, value, onChange }) {
+  const selected = normalizeAllowedColors(value);
+  function toggle(colorName) {
+    const next = selected.includes(colorName)
+      ? selected.filter((item) => item !== colorName)
+      : [...selected, colorName];
+    onChange(next.length > 0 ? next : [colorName]);
+  }
+
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <div className="swatches permission-swatches">
+        {COLORS.map((color) => (
+          <button
+            key={color.name}
+            type="button"
+            className={`swatch permission-swatch${selected.includes(color.name) ? " selected" : ""}`}
+            style={{ background: color.css }}
+            title={color.label}
+            aria-label={color.label}
+            onClick={() => toggle(color.name)}
           />
         ))}
       </div>
@@ -1094,6 +1166,17 @@ function safeFileName(name) {
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
     .trim()
     .slice(0, 40) || "GranbikeFace";
+}
+
+function normalizeAllowedColors(value) {
+  const raw = Array.isArray(value) ? value : [];
+  const colors = raw.filter((color, index) => COLOR_NAMES.has(color) && raw.indexOf(color) === index);
+  return colors.length > 0 ? colors : COLORS.map((color) => color.name);
+}
+
+function colorOptions(names) {
+  const allowed = new Set(normalizeAllowedColors(names));
+  return COLORS.filter((color) => allowed.has(color.name));
 }
 
 function getRoute() {

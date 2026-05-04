@@ -1,9 +1,22 @@
 import fs from "fs/promises";
 import path from "path";
+import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import sharp from "sharp";
 
 const TEAM_SLUG_RE = /^[a-z0-9-]{2,40}$/;
 const LOGO_ID_RE = /^[a-z0-9-]{2,40}$/;
+const VALID_COLOR_NAMES = new Set([
+  "BLACK",
+  "YELLOW",
+  "WHITE",
+  "RED",
+  "ORANGE",
+  "GREEN",
+  "BLUE",
+  "PURPLE",
+  "PINK",
+  "LT_GRAY",
+]);
 const DEFAULT_CONFIG_KEYS = new Set([
   "device",
   "backgroundColor",
@@ -89,6 +102,11 @@ export function createTeamStore(baseDir) {
       : selectedLogo?.fileName
         ? null
         : existing?.logoFileName || null;
+    const managerPassword = safePassword(input.managerPassword);
+    const allowedBackgroundColors = safeColorList(
+      input.allowedBackgroundColors,
+      existing?.allowedBackgroundColors || [safeText(input.backgroundColor, 20) || "BLACK"]
+    );
 
     if (logoUploadPath && logoFileName) {
       await saveTransparentLogo(logoUploadPath, path.join(logoDir, logoFileName));
@@ -102,6 +120,10 @@ export function createTeamStore(baseDir) {
       accentColor: safeText(input.accentColor, 20) || existing?.accentColor || "YELLOW",
       logoId: selectedLogo?.id || null,
       logoFileName,
+      managerPasswordHash: managerPassword
+        ? hashPassword(managerPassword)
+        : existing?.managerPasswordHash || "",
+      allowedBackgroundColors,
       defaultConfig: existing?.defaultConfig || {},
       updatedAt: now,
       createdAt: existing?.createdAt || now,
@@ -114,7 +136,7 @@ export function createTeamStore(baseDir) {
     return team;
   }
 
-  async function saveTeamDefaults(slug, config) {
+  async function saveTeamDefaults(slug, config, options = {}) {
     await ensureReady();
     const cleanSlug = safeSlug(slug);
     if (!cleanSlug) throw new Error("Slug squadra non valido");
@@ -124,6 +146,9 @@ export function createTeamStore(baseDir) {
     const team = {
       ...existing,
       defaultConfig: sanitizeDefaultConfig(config),
+      allowedBackgroundColors: Object.prototype.hasOwnProperty.call(options, "allowedBackgroundColors")
+        ? safeColorList(options.allowedBackgroundColors, existing.allowedBackgroundColors || [existing.backgroundColor || "BLACK"])
+        : existing.allowedBackgroundColors || [existing.backgroundColor || "BLACK"],
       updatedAt: new Date().toISOString(),
     };
     await writeTeams(teams.map((item) => (item.slug === cleanSlug ? team : item)));
@@ -194,6 +219,14 @@ export function createTeamStore(baseDir) {
     }
   }
 
+  async function verifyTeamManagerPassword(slug, password) {
+    const cleanPassword = safePassword(password);
+    if (!cleanPassword) return false;
+    const team = await getTeam(slug);
+    if (!team?.managerPasswordHash) return false;
+    return verifyPassword(cleanPassword, team.managerPasswordHash);
+  }
+
   async function readTeams() {
     await ensureReady();
     return readJson(teamsPath);
@@ -239,6 +272,7 @@ export function createTeamStore(baseDir) {
     saveLogo,
     getNamedLogoPath,
     getLogoPath,
+    verifyTeamManagerPassword,
   };
 }
 
@@ -252,6 +286,11 @@ export function publicTeam(team) {
     accentColor: team.accentColor,
     logoId: team.logoId || "",
     hasLogo: Boolean(team.logoId || team.logoFileName),
+    hasManagerPassword: Boolean(team.managerPasswordHash),
+    allowedBackgroundColors: safeColorList(
+      team.allowedBackgroundColors,
+      team.backgroundColor ? [team.backgroundColor] : ["BLACK"]
+    ),
     defaultConfig: team.defaultConfig || {},
     updatedAt: team.updatedAt,
     createdAt: team.createdAt,
@@ -300,6 +339,62 @@ function safeFileName(value) {
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
     .trim()
     .slice(0, 40) || "GranbikeFace";
+}
+
+function safePassword(value) {
+  return String(value || "").trim().slice(0, 100);
+}
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 32).toString("hex");
+  return `scrypt:${salt}:${hash}`;
+}
+
+function verifyPassword(password, stored) {
+  if (!stored) return false;
+  if (!stored.startsWith("scrypt:")) {
+    return timingSafeText(password, stored);
+  }
+  const [, salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const expected = Buffer.from(hash, "hex");
+  const actual = scryptSync(password, salt, expected.length);
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function timingSafeText(a, b) {
+  const left = Buffer.from(String(a));
+  const right = Buffer.from(String(b));
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
+function safeColorList(value, fallback = ["BLACK"]) {
+  let raw = value;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        raw = JSON.parse(trimmed);
+      } catch {
+        raw = trimmed.split(",");
+      }
+    } else {
+      raw = trimmed.split(",");
+    }
+  }
+  const values = Array.isArray(raw) ? raw : [];
+  const colors = [];
+  for (const item of values) {
+    const color = safeText(item, 20);
+    if (VALID_COLOR_NAMES.has(color) && !colors.includes(color)) colors.push(color);
+  }
+  if (colors.length > 0) return colors;
+  const fallbackValues = Array.isArray(fallback) ? fallback : [fallback];
+  const fallbackColors = fallbackValues
+    .map((item) => safeText(item, 20))
+    .filter((color, index, list) => VALID_COLOR_NAMES.has(color) && list.indexOf(color) === index);
+  return fallbackColors.length > 0 ? fallbackColors : ["BLACK"];
 }
 
 function sanitizeDefaultConfig(config) {
