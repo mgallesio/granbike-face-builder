@@ -207,25 +207,26 @@ export default function WatchPreview({ config, photoUrl, onMoveItem }) {
         );
       }
 
-      // Memorial text
-      if (config.memorialLine1) {
+      const athleteName = config.athleteName || config.memorialLine1;
+      const athleteNumber = config.athleteNumber || config.memorialLine2;
+      if (athleteName) {
         drawShadowText(
           ctx,
-          config.memorialLine1,
-          config.text1X ?? cx,
-          config.text1Y ?? 130,
+          athleteName,
+          config.athleteNameX ?? config.text1X ?? cx,
+          config.athleteNameY ?? config.text1Y ?? 130,
           "bold 20px Arial",
           "#fff"
         );
       }
-      if (config.memorialLine2) {
+      if (athleteNumber) {
         drawShadowText(
           ctx,
-          config.memorialLine2,
-          config.text2X ?? cx,
-          config.text2Y ?? 152,
-          "16px Arial",
-          "#fff"
+          athleteNumber,
+          config.athleteNumberX ?? config.text2X ?? cx,
+          config.athleteNumberY ?? config.text2Y ?? 160,
+          "bold 34px Arial",
+          accent
         );
       }
 
@@ -331,8 +332,12 @@ function findDraggableItem(config, logoImage, point) {
   if (config.showAltitude) items.push(pointItem("altitudeX", "altitudeY", config.altitudeX ?? 210, config.altitudeY ?? 184, 30));
   if (config.showSteps) items.push(pointItem("stepsX", "stepsY", config.stepsX ?? 130, config.stepsY ?? 218, 30));
   if (config.showCalories) items.push(pointItem("caloriesX", "caloriesY", config.caloriesX ?? 210, config.caloriesY ?? 74, 38));
-  if (config.memorialLine1) items.push(pointItem("text1X", "text1Y", config.text1X ?? 130, config.text1Y ?? 130, 44));
-  if (config.memorialLine2) items.push(pointItem("text2X", "text2Y", config.text2X ?? 130, config.text2Y ?? 152, 44));
+  if (config.athleteName || config.memorialLine1) {
+    items.push(pointItem("athleteNameX", "athleteNameY", config.athleteNameX ?? config.text1X ?? 130, config.athleteNameY ?? config.text1Y ?? 130, 44));
+  }
+  if (config.athleteNumber || config.memorialLine2) {
+    items.push(pointItem("athleteNumberX", "athleteNumberY", config.athleteNumberX ?? config.text2X ?? 130, config.athleteNumberY ?? config.text2Y ?? 160, 44));
+  }
 
   return items.reverse().find((item) => hitTest(item, point)) || null;
 }

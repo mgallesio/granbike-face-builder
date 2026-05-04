@@ -63,6 +63,10 @@ const DEFAULT_CONFIG = {
   stepsY: 218,
   caloriesX: 210,
   caloriesY: 74,
+  athleteNameX: 130,
+  athleteNameY: 130,
+  athleteNumberX: 130,
+  athleteNumberY: 160,
   text1X: 130,
   text1Y: 130,
   text2X: 130,
@@ -71,6 +75,8 @@ const DEFAULT_CONFIG = {
   logoY: 192,
   logoScale: 100,
   photoScale: 100,
+  athleteName: "",
+  athleteNumber: "",
   memorialLine1: "",
   memorialLine2: "",
   hasPhoto: false,
@@ -595,18 +601,18 @@ function BuilderApp({ route }) {
             onY={(value) => update("caloriesY", value)}
           />
           <PositionControl
-            label="Testo riga 1"
-            x={config.text1X}
-            y={config.text1Y}
-            onX={(value) => update("text1X", value)}
-            onY={(value) => update("text1Y", value)}
+            label="Nome atleta"
+            x={config.athleteNameX}
+            y={config.athleteNameY}
+            onX={(value) => update("athleteNameX", value)}
+            onY={(value) => update("athleteNameY", value)}
           />
           <PositionControl
-            label="Testo riga 2"
-            x={config.text2X}
-            y={config.text2Y}
-            onX={(value) => update("text2X", value)}
-            onY={(value) => update("text2Y", value)}
+            label="Numero maglia"
+            x={config.athleteNumberX}
+            y={config.athleteNumberY}
+            onX={(value) => update("athleteNumberX", value)}
+            onY={(value) => update("athleteNumberY", value)}
           />
           <PositionControl
             label="Logo"
@@ -625,25 +631,26 @@ function BuilderApp({ route }) {
         </section>
 
         <section className="panel">
-          <h2>Testo</h2>
+          <h2>Atleta</h2>
           <div className="field">
-            <label>Riga 1</label>
+            <label>Nome / nickname</label>
             <input
               type="text"
-              value={config.memorialLine1}
-              onChange={(e) => update("memorialLine1", e.target.value)}
+              value={config.athleteName}
+              onChange={(e) => update("athleteName", e.target.value)}
               maxLength={20}
-              placeholder="Andrea"
+              placeholder="Nome atleta"
             />
           </div>
           <div className="field">
-            <label>Riga 2</label>
+            <label>Numero maglia</label>
             <input
               type="text"
-              value={config.memorialLine2}
-              onChange={(e) => update("memorialLine2", e.target.value)}
-              maxLength={30}
-              placeholder="Sempre con noi"
+              value={config.athleteNumber}
+              onChange={(e) => update("athleteNumber", e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
+              inputMode="numeric"
+              maxLength={3}
+              placeholder="10"
             />
           </div>
         </section>

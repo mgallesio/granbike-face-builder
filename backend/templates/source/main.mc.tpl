@@ -50,8 +50,8 @@ class MainView extends WatchUi.WatchFace {
         {{#SHOW_STEPS}}drawSteps(dc, {{STEPS_X}}, {{STEPS_Y}});{{/SHOW_STEPS}}
         {{#SHOW_CALORIES}}drawCalories(dc, {{CALORIES_X}}, {{CALORIES_Y}});{{/SHOW_CALORIES}}
 
-        {{#MEMORIAL_LINE1}}drawTextWithShadow(dc, {{TEXT1_X}}, {{TEXT1_Y}}, Graphics.FONT_MEDIUM, "{{MEMORIAL_LINE1}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE1}}
-        {{#MEMORIAL_LINE2}}drawTextWithShadow(dc, {{TEXT2_X}}, {{TEXT2_Y}}, Graphics.FONT_SMALL, "{{MEMORIAL_LINE2}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE2}}
+        {{#ATHLETE_NAME}}drawTextWithShadow(dc, {{ATHLETE_NAME_X}}, {{ATHLETE_NAME_Y}}, Graphics.FONT_MEDIUM, "{{ATHLETE_NAME}}", Graphics.COLOR_WHITE);{{/ATHLETE_NAME}}
+        {{#ATHLETE_NUMBER}}drawTextWithShadow(dc, {{ATHLETE_NUMBER_X}}, {{ATHLETE_NUMBER_Y}}, Graphics.FONT_LARGE, "{{ATHLETE_NUMBER}}", Graphics.COLOR_{{ACCENT_COLOR}});{{/ATHLETE_NUMBER}}
 
         drawAllHands(dc, cx, cy);
     }
@@ -73,8 +73,8 @@ class MainView extends WatchUi.WatchFace {
         {{#SHOW_ALTITUDE}}drawAltitude(dc, {{ALTITUDE_X}}, {{ALTITUDE_Y}});{{/SHOW_ALTITUDE}}
         {{#SHOW_STEPS}}drawSteps(dc, {{STEPS_X}}, {{STEPS_Y}});{{/SHOW_STEPS}}
         {{#SHOW_CALORIES}}drawCalories(dc, {{CALORIES_X}}, {{CALORIES_Y}});{{/SHOW_CALORIES}}
-        {{#MEMORIAL_LINE1}}drawTextWithShadow(dc, {{TEXT1_X}}, {{TEXT1_Y}}, Graphics.FONT_MEDIUM, "{{MEMORIAL_LINE1}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE1}}
-        {{#MEMORIAL_LINE2}}drawTextWithShadow(dc, {{TEXT2_X}}, {{TEXT2_Y}}, Graphics.FONT_SMALL, "{{MEMORIAL_LINE2}}", Graphics.COLOR_WHITE);{{/MEMORIAL_LINE2}}
+        {{#ATHLETE_NAME}}drawTextWithShadow(dc, {{ATHLETE_NAME_X}}, {{ATHLETE_NAME_Y}}, Graphics.FONT_MEDIUM, "{{ATHLETE_NAME}}", Graphics.COLOR_WHITE);{{/ATHLETE_NAME}}
+        {{#ATHLETE_NUMBER}}drawTextWithShadow(dc, {{ATHLETE_NUMBER_X}}, {{ATHLETE_NUMBER_Y}}, Graphics.FONT_LARGE, "{{ATHLETE_NUMBER}}", Graphics.COLOR_{{ACCENT_COLOR}});{{/ATHLETE_NUMBER}}
         drawAllHands(dc, cx, cy);
         dc.clearClip();
 

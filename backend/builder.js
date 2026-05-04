@@ -269,6 +269,10 @@ async function prepareBuild(config, photoPath, tmpBase, options = {}) {
     STEPS_Y: safeNumber(config.stepsY, 218),
     CALORIES_X: safeNumber(config.caloriesX, 210),
     CALORIES_Y: safeNumber(config.caloriesY, 74),
+    ATHLETE_NAME_X: safeNumber(config.athleteNameX ?? config.text1X, 130),
+    ATHLETE_NAME_Y: safeNumber(config.athleteNameY ?? config.text1Y, 130),
+    ATHLETE_NUMBER_X: safeNumber(config.athleteNumberX ?? config.text2X, 130),
+    ATHLETE_NUMBER_Y: safeNumber(config.athleteNumberY ?? config.text2Y, 160),
     TEXT1_X: safeNumber(config.text1X, 130),
     TEXT1_Y: safeNumber(config.text1Y, 130),
     TEXT2_X: safeNumber(config.text2X, 130),
@@ -281,10 +285,12 @@ async function prepareBuild(config, photoPath, tmpBase, options = {}) {
     LOGO_HALF_WIDTH: Math.round(80 * safeLogoScale(config.logoScale, 100) / 100),
     PHOTO_SCALE: safeScale(config.photoScale, 100),
     HAS_PHOTO: !!photoPath,
+    ATHLETE_NAME: safeText(config.athleteName || config.memorialLine1, 20),
+    ATHLETE_NUMBER: safeText(config.athleteNumber || config.memorialLine2, 3).replace(/[^0-9]/g, ""),
     MEMORIAL_LINE1: safeText(config.memorialLine1),
     MEMORIAL_LINE2: safeText(config.memorialLine2),
     HAS_MEMORIAL:
-      !!safeText(config.memorialLine1) || !!safeText(config.memorialLine2),
+      !!safeText(config.athleteName || config.memorialLine1) || !!safeText(config.athleteNumber || config.memorialLine2),
   };
   const device = safeDevice(config.device, "fenix7pro");
   const products = (options.products || [device])
