@@ -196,7 +196,7 @@ export async function buildFace(config, photoPath, tmpBase) {
       "-d", device,
       "-w",
     ],
-    60000
+    180000
   );
 
   return { prgPath, buildDir };
@@ -392,7 +392,7 @@ async function createPhotoAsset(photoPath, dst, scalePercent) {
     .toFile(dst);
 }
 
-async function runMonkeyCompiler(javaPath, jarPath, args, timeout = 60000) {
+async function runMonkeyCompiler(javaPath, jarPath, args, timeout = 180000) {
   await new Promise((resolve, reject) => {
     execFile(
       javaPath,
