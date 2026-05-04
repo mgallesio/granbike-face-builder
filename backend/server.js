@@ -220,7 +220,7 @@ app.post("/api/package", upload.single("photo"), async (req, res) => {
     await applyTeamConfig(config);
     const photoPath = req.file ? req.file.path : null;
     const result = await buildStorePackage(config, photoPath, TMP_DIR);
-    const downloadName = `${safeDownloadName(config.prgFileName || config.name || "GranbikeFace")}-beta.iq`;
+    const downloadName = `${safeDownloadName(config.prgFileName || config.name || "TeamFace")}-beta.iq`;
 
     res.download(result.packagePath, downloadName, async (err) => {
       await cleanupUpload(photoPath);

@@ -29,8 +29,8 @@ const DEVICES = [
 ];
 
 const DEFAULT_CONFIG = {
-  name: "Granbike Face",
-  prgFileName: "GranbikeFace",
+  name: "Team Face",
+  prgFileName: "TeamFace",
   teamSlug: "",
   device: "fenix7pro",
   backgroundColor: "BLACK",
@@ -226,7 +226,7 @@ function BuilderApp({ route }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${safeFileName(config.prgFileName || config.name || "GranbikeFace")}.prg`;
+      link.download = `${safeFileName(config.prgFileName || config.name || "TeamFace")}.prg`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus({
@@ -258,7 +258,7 @@ function BuilderApp({ route }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${safeFileName(config.prgFileName || config.name || "GranbikeFace")}-beta.iq`;
+      link.download = `${safeFileName(config.prgFileName || config.name || "TeamFace")}-beta.iq`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus({
@@ -280,7 +280,7 @@ function BuilderApp({ route }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${safeFileName(config.prgFileName || config.name || "GranbikeFace")}-preview.png`;
+      link.download = `${safeFileName(config.prgFileName || config.name || "TeamFace")}-preview.png`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus({ msg: "Anteprima face scaricata in PNG.", kind: "ok" });
@@ -907,11 +907,11 @@ function AdminApp() {
           </div>
           <div className="field">
             <label>Slug link</label>
-            <input value={form.slug} onChange={(e) => updateForm("slug", e.target.value)} placeholder="granbike-team" />
+            <input value={form.slug} onChange={(e) => updateForm("slug", e.target.value)} placeholder="nome-squadra" />
           </div>
           <div className="field">
             <label>Nome file PRG</label>
-            <input value={form.prgFileName} onChange={(e) => updateForm("prgFileName", e.target.value)} placeholder="GranbikeTeamFace" />
+            <input value={form.prgFileName} onChange={(e) => updateForm("prgFileName", e.target.value)} placeholder="NomeSquadraFace" />
           </div>
           <div className="field">
             <label>Password responsabile squadra</label>
@@ -969,7 +969,7 @@ function AdminApp() {
           </div>
           <div className="field">
             <label>Codice logo</label>
-            <input value={logoForm.id} onChange={(e) => setLogoForm((current) => ({ ...current, id: e.target.value }))} placeholder="logo-granbike" />
+            <input value={logoForm.id} onChange={(e) => setLogoForm((current) => ({ ...current, id: e.target.value }))} placeholder="logo-squadra" />
           </div>
           <div className="field">
             <label>File logo</label>
@@ -1165,7 +1165,7 @@ function safeFileName(name) {
   return String(name)
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
     .trim()
-    .slice(0, 40) || "GranbikeFace";
+    .slice(0, 40) || "TeamFace";
 }
 
 function normalizeAllowedColors(value) {
