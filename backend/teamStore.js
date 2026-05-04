@@ -17,6 +17,13 @@ const VALID_COLOR_NAMES = new Set([
   "PINK",
   "LT_GRAY",
 ]);
+const DEFAULT_TEAM_FEATURES = {
+  allowBackgroundColor: true,
+  allowLogo: true,
+  allowNumbers: true,
+  allowAthleteName: true,
+  allowAthleteNumber: true,
+};
 const DEFAULT_CONFIG_KEYS = new Set([
   "device",
   "backgroundColor",
@@ -113,6 +120,7 @@ export function createTeamStore(baseDir) {
       input.allowedBackgroundColors,
       existing?.allowedBackgroundColors || [safeText(input.backgroundColor, 20) || "BLACK"]
     );
+    const teamFeatures = safeTeamFeatures(input.teamFeatures, existing?.teamFeatures);
 
     if (logoUploadPath && logoFileName) {
       await saveTransparentLogo(logoUploadPath, path.join(logoDir, logoFileName));
@@ -130,6 +138,7 @@ export function createTeamStore(baseDir) {
         ? hashPassword(managerPassword)
         : existing?.managerPasswordHash || "",
       allowedBackgroundColors,
+      teamFeatures,
       defaultConfig: existing?.defaultConfig || {},
       updatedAt: now,
       createdAt: existing?.createdAt || now,
@@ -155,6 +164,9 @@ export function createTeamStore(baseDir) {
       allowedBackgroundColors: Object.prototype.hasOwnProperty.call(options, "allowedBackgroundColors")
         ? safeColorList(options.allowedBackgroundColors, existing.allowedBackgroundColors || [existing.backgroundColor || "BLACK"])
         : existing.allowedBackgroundColors || [existing.backgroundColor || "BLACK"],
+      teamFeatures: Object.prototype.hasOwnProperty.call(options, "teamFeatures")
+        ? safeTeamFeatures(options.teamFeatures, existing.teamFeatures)
+        : safeTeamFeatures(existing.teamFeatures),
       updatedAt: new Date().toISOString(),
     };
     await writeTeams(teams.map((item) => (item.slug === cleanSlug ? team : item)));
@@ -297,6 +309,7 @@ export function publicTeam(team) {
       team.allowedBackgroundColors,
       team.backgroundColor ? [team.backgroundColor] : ["BLACK"]
     ),
+    teamFeatures: safeTeamFeatures(team.teamFeatures),
     defaultConfig: team.defaultConfig || {},
     updatedAt: team.updatedAt,
     createdAt: team.createdAt,
@@ -401,6 +414,26 @@ function safeColorList(value, fallback = ["BLACK"]) {
     .map((item) => safeText(item, 20))
     .filter((color, index, list) => VALID_COLOR_NAMES.has(color) && list.indexOf(color) === index);
   return fallbackColors.length > 0 ? fallbackColors : ["BLACK"];
+}
+
+function safeTeamFeatures(value, fallback = DEFAULT_TEAM_FEATURES) {
+  let raw = value;
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      raw = {};
+    }
+  }
+  const base = { ...DEFAULT_TEAM_FEATURES, ...(fallback && typeof fallback === "object" ? fallback : {}) };
+  const input = raw && typeof raw === "object" ? raw : {};
+  return {
+    allowBackgroundColor: input.allowBackgroundColor ?? base.allowBackgroundColor,
+    allowLogo: input.allowLogo ?? base.allowLogo,
+    allowNumbers: input.allowNumbers ?? base.allowNumbers,
+    allowAthleteName: input.allowAthleteName ?? base.allowAthleteName,
+    allowAthleteNumber: input.allowAthleteNumber ?? base.allowAthleteNumber,
+  };
 }
 
 function sanitizeDefaultConfig(config) {

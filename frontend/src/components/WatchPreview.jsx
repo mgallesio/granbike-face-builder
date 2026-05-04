@@ -40,12 +40,14 @@ export default function WatchPreview({ config, photoUrl, onMoveItem }) {
     logosquadraRef.current = null;
     img.onload = () => { logosquadraRef.current = img; };
     img.onerror = () => { logosquadraRef.current = null; };
-    if (config.teamSlug) {
+    if (config.logoHidden) {
+      logosquadraRef.current = null;
+    } else if (config.teamSlug) {
       img.src = `/api/teams/${encodeURIComponent(config.teamSlug)}/logo?t=${Date.now()}`;
     } else if (config.logoName) {
       img.src = `/api/logosquadra?logo=${encodeURIComponent(config.logoName)}&t=${Date.now()}`;
     }
-  }, [config.logoName, config.teamSlug, config.logoCacheKey]);
+  }, [config.logoName, config.teamSlug, config.logoHidden, config.logoCacheKey]);
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");
@@ -62,7 +64,7 @@ export default function WatchPreview({ config, photoUrl, onMoveItem }) {
         ctx.fillStyle = background;
         ctx.fillRect(0, 0, W, H);
         const size = W * ((config.photoScale ?? 100) / 100);
-        ctx.drawImage(photoRef.current, cx - size / 2, cy - size / 2, size, size);
+        drawCoverImage(ctx, photoRef.current, cx - size / 2, cy - size / 2, size, size);
       } else {
         ctx.fillStyle = background;
         ctx.fillRect(0, 0, W, H);
@@ -386,4 +388,21 @@ function drawShadowText(ctx, text, x, y, font, color) {
   }
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
+}
+
+function drawCoverImage(ctx, img, x, y, w, h) {
+  const sourceRatio = img.width / img.height;
+  const targetRatio = w / h;
+  let sx = 0;
+  let sy = 0;
+  let sw = img.width;
+  let sh = img.height;
+  if (sourceRatio > targetRatio) {
+    sw = img.height * targetRatio;
+    sx = (img.width - sw) / 2;
+  } else {
+    sh = img.width / targetRatio;
+    sy = (img.height - sh) / 2;
+  }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }

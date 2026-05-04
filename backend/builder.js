@@ -377,6 +377,7 @@ async function createPhotoAsset(photoPath, dst, scalePercent) {
   const faceSize = 260;
   const photoSize = Math.max(1, Math.round(faceSize * (scalePercent / 100)));
   let image = sharp(photoPath)
+    .rotate()
     .resize(photoSize, photoSize, { fit: "cover", position: "centre" });
 
   if (photoSize >= faceSize) {

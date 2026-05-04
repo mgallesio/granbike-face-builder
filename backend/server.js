@@ -170,6 +170,7 @@ app.post("/api/admin/teams/:slug/defaults", requireTeamManager, async (req, res)
   try {
     const team = await teamStore.saveTeamDefaults(req.params.slug, req.body?.config || {}, {
       allowedBackgroundColors: req.body?.allowedBackgroundColors,
+      teamFeatures: req.body?.teamFeatures,
     });
     res.json(publicTeam(team));
   } catch (e) {
@@ -281,20 +282,44 @@ async function applyTeamConfig(config) {
   if (!team) throw new Error("Squadra non trovata");
   const logoPath = await teamStore.getLogoPath(team);
   Object.assign(config, { ...(team.defaultConfig || {}), ...config });
+  const teamFeatures = {
+    allowBackgroundColor: true,
+    allowLogo: true,
+    allowNumbers: true,
+    allowAthleteName: true,
+    allowAthleteNumber: true,
+    ...(team.teamFeatures || {}),
+  };
   config.name = team.name;
   config.prgFileName = team.prgFileName;
-  config.logoName = "logosquadra";
+  config.logoName = teamFeatures.allowLogo ? "logosquadra" : "";
   const allowedBackgroundColors = Array.isArray(team.allowedBackgroundColors)
     ? team.allowedBackgroundColors
     : [];
-  if (allowedBackgroundColors.length > 0 && !allowedBackgroundColors.includes(config.backgroundColor)) {
+  if (!teamFeatures.allowBackgroundColor) {
+    config.backgroundColor = team.defaultConfig?.backgroundColor || team.backgroundColor || config.backgroundColor;
+  } else if (allowedBackgroundColors.length > 0 && !allowedBackgroundColors.includes(config.backgroundColor)) {
     config.backgroundColor = allowedBackgroundColors[0];
   } else if (team.backgroundColor && !config.backgroundColor) {
     config.backgroundColor = team.backgroundColor;
   }
+  if (!teamFeatures.allowNumbers) {
+    config.showNumbers = false;
+    config.numbersMode = "none";
+  }
+  if (!teamFeatures.allowAthleteName) {
+    config.athleteName = "";
+    config.memorialLine1 = "";
+  }
+  if (!teamFeatures.allowAthleteNumber) {
+    config.athleteNumber = "";
+    config.memorialLine2 = "";
+  }
   if (team.accentColor) config.accentColor = team.accentColor;
-  if (!logoPath) throw new Error(`Logo non configurato per la squadra ${team.name}`);
-  config.teamLogoPath = logoPath;
+  if (teamFeatures.allowLogo) {
+    if (!logoPath) throw new Error(`Logo non configurato per la squadra ${team.name}`);
+    config.teamLogoPath = logoPath;
+  }
 }
 
 async function cleanupUpload(filePath) {

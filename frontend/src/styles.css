@@ -217,6 +217,16 @@ h1 {
   opacity: 1;
 }
 
+.feature-locks {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 14px;
+  padding: 10px 11px;
+  border: 1px solid #3c4048;
+  border-radius: 6px;
+  background: #101113;
+}
+
 .preview-area {
   display: flex;
   flex-direction: column;

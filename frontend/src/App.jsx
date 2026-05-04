@@ -14,6 +14,13 @@ const COLORS = [
   { name: "LT_GRAY", label: "Grigio", css: "#aaaaaa" },
 ];
 const COLOR_NAMES = new Set(COLORS.map((color) => color.name));
+const DEFAULT_TEAM_FEATURES = {
+  allowBackgroundColor: true,
+  allowLogo: true,
+  allowNumbers: true,
+  allowAthleteName: true,
+  allowAthleteNumber: true,
+};
 
 const DEVICES = [
   { id: "fenix7pro", label: "fenix 7 Pro / Pro Solar" },
@@ -80,6 +87,7 @@ const DEFAULT_CONFIG = {
   memorialLine1: "",
   memorialLine2: "",
   hasPhoto: false,
+  logoHidden: false,
 };
 
 export default function App() {
@@ -107,6 +115,7 @@ function BuilderApp({ route }) {
   const [availableLogos, setAvailableLogos] = useState([]);
   const [teamLogoId, setTeamLogoId] = useState("");
   const [allowedBackgroundColors, setAllowedBackgroundColors] = useState(COLORS.map((color) => color.name));
+  const [teamFeatures, setTeamFeatures] = useState(DEFAULT_TEAM_FEATURES);
 
   const photoUrl = useMemo(
     () => (photoFile ? URL.createObjectURL(photoFile) : null),
@@ -152,6 +161,7 @@ function BuilderApp({ route }) {
       .then((data) => {
         if (!active) return;
         const allowedColors = normalizeAllowedColors(data.allowedBackgroundColors);
+        const features = normalizeTeamFeatures(data.teamFeatures);
         const defaultBackground = data.defaultConfig?.backgroundColor || data.backgroundColor || DEFAULT_CONFIG.backgroundColor;
         const backgroundColor = allowedColors.includes(defaultBackground)
           ? defaultBackground
@@ -159,14 +169,20 @@ function BuilderApp({ route }) {
         setTeam(data);
         setTeamLogoId(data.logoId || "");
         setAllowedBackgroundColors(allowedColors);
+        setTeamFeatures(features);
         setConfig((current) => ({
           ...current,
           ...(data.defaultConfig || {}),
           name: data.name,
           prgFileName: data.prgFileName,
           teamSlug: data.slug,
+          logoHidden: features.allowLogo === false,
           backgroundColor,
           accentColor: data.accentColor || current.accentColor,
+          showNumbers: features.allowNumbers === false ? false : data.defaultConfig?.showNumbers ?? current.showNumbers,
+          numbersMode: features.allowNumbers === false ? "none" : data.defaultConfig?.numbersMode ?? current.numbersMode,
+          athleteName: features.allowAthleteName === false ? "" : data.defaultConfig?.athleteName ?? current.athleteName,
+          athleteNumber: features.allowAthleteNumber === false ? "" : data.defaultConfig?.athleteNumber ?? current.athleteNumber,
         }));
       })
       .catch((e) => {
@@ -196,6 +212,17 @@ function BuilderApp({ route }) {
 
   function update(key, value) {
     setConfig((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateTeamFeature(key, value) {
+    setTeamFeatures((current) => ({ ...current, [key]: value }));
+    if (key === "allowLogo") update("logoHidden", !value);
+    if (key === "allowNumbers" && !value) {
+      update("numbersMode", "none");
+      update("showNumbers", false);
+    }
+    if (key === "allowAthleteName" && !value) update("athleteName", "");
+    if (key === "allowAthleteNumber" && !value) update("athleteNumber", "");
   }
 
   function movePreviewItem(xKey, yKey, x, y) {
@@ -307,7 +334,7 @@ function BuilderApp({ route }) {
           "x-admin-password": adminPassword,
           "x-team-password": adminPassword,
         },
-        body: JSON.stringify({ config, allowedBackgroundColors }),
+        body: JSON.stringify({ config, allowedBackgroundColors, teamFeatures }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
@@ -471,23 +498,44 @@ function BuilderApp({ route }) {
 
         <section className="panel">
           <h2>Colori</h2>
-          <ColorPicker
-            label="Sfondo"
-            value={config.backgroundColor}
-            onChange={(value) => update("backgroundColor", value)}
-            colors={isTeamRoute ? colorOptions(allowedBackgroundColors) : COLORS}
-          />
-          {isAdminSettings && (
-            <ColorPermissionPicker
-              label="Colori sfondo utilizzabili dalla squadra"
-              value={allowedBackgroundColors}
-              onChange={(colors) => {
-                setAllowedBackgroundColors(colors);
-                if (!colors.includes(config.backgroundColor)) {
-                  update("backgroundColor", colors[0]);
-                }
-              }}
+          {(!isTeamRoute || isAdminSettings || teamFeatures.allowBackgroundColor) && (
+            <ColorPicker
+              label="Sfondo"
+              value={config.backgroundColor}
+              onChange={(value) => update("backgroundColor", value)}
+              colors={isTeamRoute ? colorOptions(allowedBackgroundColors) : COLORS}
             />
+          )}
+          {isAdminSettings && (
+            <>
+              <div className="feature-locks">
+                <Toggle checked={teamFeatures.allowBackgroundColor} onChange={(value) => updateTeamFeature("allowBackgroundColor", value)}>
+                  Utenti possono cambiare sfondo
+                </Toggle>
+                <Toggle checked={teamFeatures.allowLogo} onChange={(value) => updateTeamFeature("allowLogo", value)}>
+                  Logo squadra visibile nella face
+                </Toggle>
+                <Toggle checked={teamFeatures.allowNumbers} onChange={(value) => updateTeamFeature("allowNumbers", value)}>
+                  Numeri orologio abilitati
+                </Toggle>
+                <Toggle checked={teamFeatures.allowAthleteName} onChange={(value) => updateTeamFeature("allowAthleteName", value)}>
+                  Nome / nickname atleta abilitato
+                </Toggle>
+                <Toggle checked={teamFeatures.allowAthleteNumber} onChange={(value) => updateTeamFeature("allowAthleteNumber", value)}>
+                  Numero maglia abilitato
+                </Toggle>
+              </div>
+              <ColorPermissionPicker
+                label="Colori sfondo utilizzabili dalla squadra"
+                value={allowedBackgroundColors}
+                onChange={(colors) => {
+                  setAllowedBackgroundColors(colors);
+                  if (!colors.includes(config.backgroundColor)) {
+                    update("backgroundColor", colors[0]);
+                  }
+                }}
+              />
+            </>
           )}
           <ColorPicker
             label="Lancette ore/minuti e tacche"
@@ -524,20 +572,22 @@ function BuilderApp({ route }) {
           <Toggle checked={config.showCalories} onChange={(value) => update("showCalories", value)}>
             Calorie
           </Toggle>
-          <div className="field">
-            <label>Numeri</label>
-            <select
-              value={config.numbersMode}
-              onChange={(e) => {
-                update("numbersMode", e.target.value);
-                update("showNumbers", e.target.value !== "none");
-              }}
-            >
-              <option value="none">Nessuno</option>
-              <option value="cardinal">12/3/6/9</option>
-              <option value="all">Tutti 1-12</option>
-            </select>
-          </div>
+          {(!isTeamRoute || isAdminSettings || teamFeatures.allowNumbers) && (
+            <div className="field">
+              <label>Numeri</label>
+              <select
+                value={config.numbersMode}
+                onChange={(e) => {
+                  update("numbersMode", e.target.value);
+                  update("showNumbers", e.target.value !== "none");
+                }}
+              >
+                <option value="none">Nessuno</option>
+                <option value="cardinal">12/3/6/9</option>
+                <option value="all">Tutti 1-12</option>
+              </select>
+            </div>
+          )}
           <Toggle checked={config.showSeconds} onChange={(value) => update("showSeconds", value)}>
             Lancetta secondi
           </Toggle>
@@ -549,89 +599,25 @@ function BuilderApp({ route }) {
           </Toggle>
         </section>
 
-        <section className="panel">
-          <h2>Layout</h2>
-          <PositionControl
-            label="Cuore"
-            x={config.hrX}
-            y={config.hrY}
-            onX={(value) => update("hrX", value)}
-            onY={(value) => update("hrY", value)}
-          />
-          <PositionControl
-            label="Batteria"
-            x={config.batteryX}
-            y={config.batteryY}
-            onX={(value) => update("batteryX", value)}
-            onY={(value) => update("batteryY", value)}
-          />
-          <PositionControl
-            label="Ora digitale"
-            x={config.digitalTimeX}
-            y={config.digitalTimeY}
-            onX={(value) => update("digitalTimeX", value)}
-            onY={(value) => update("digitalTimeY", value)}
-          />
-          <PositionControl
-            label="Data"
-            x={config.dateX}
-            y={config.dateY}
-            onX={(value) => update("dateX", value)}
-            onY={(value) => update("dateY", value)}
-          />
-          <PositionControl
-            label="Altitudine"
-            x={config.altitudeX}
-            y={config.altitudeY}
-            onX={(value) => update("altitudeX", value)}
-            onY={(value) => update("altitudeY", value)}
-          />
-          <PositionControl
-            label="Passi"
-            x={config.stepsX}
-            y={config.stepsY}
-            onX={(value) => update("stepsX", value)}
-            onY={(value) => update("stepsY", value)}
-          />
-          <PositionControl
-            label="Calorie"
-            x={config.caloriesX}
-            y={config.caloriesY}
-            onX={(value) => update("caloriesX", value)}
-            onY={(value) => update("caloriesY", value)}
-          />
-          <PositionControl
-            label="Nome atleta"
-            x={config.athleteNameX}
-            y={config.athleteNameY}
-            onX={(value) => update("athleteNameX", value)}
-            onY={(value) => update("athleteNameY", value)}
-          />
-          <PositionControl
-            label="Numero maglia"
-            x={config.athleteNumberX}
-            y={config.athleteNumberY}
-            onX={(value) => update("athleteNumberX", value)}
-            onY={(value) => update("athleteNumberY", value)}
-          />
-          <PositionControl
-            label="Logo"
-            x={config.logoX}
-            y={config.logoY}
-            onX={(value) => update("logoX", value)}
-            onY={(value) => update("logoY", value)}
-          />
-          <ScaleControl
-            label="Dimensione logo"
-            value={config.logoScale}
-            min={40}
-            max={180}
-            onChange={(value) => update("logoScale", value)}
-          />
-        </section>
+        {(!isTeamRoute || isAdminSettings || teamFeatures.allowLogo) && (
+          <section className="panel">
+            <h2>Dimensioni</h2>
+            {(!isTeamRoute || isAdminSettings || teamFeatures.allowLogo) && (
+              <ScaleControl
+                label="Dimensione logo"
+                value={config.logoScale}
+                min={40}
+                max={180}
+                onChange={(value) => update("logoScale", value)}
+              />
+            )}
+          </section>
+        )}
 
+        {(!isTeamRoute || isAdminSettings || teamFeatures.allowAthleteName || teamFeatures.allowAthleteNumber) && (
         <section className="panel">
           <h2>Atleta</h2>
+          {(!isTeamRoute || isAdminSettings || teamFeatures.allowAthleteName) && (
           <div className="field">
             <label>Nome / nickname</label>
             <input
@@ -642,6 +628,8 @@ function BuilderApp({ route }) {
               placeholder="Nome atleta"
             />
           </div>
+          )}
+          {(!isTeamRoute || isAdminSettings || teamFeatures.allowAthleteNumber) && (
           <div className="field">
             <label>Numero maglia</label>
             <input
@@ -653,7 +641,9 @@ function BuilderApp({ route }) {
               placeholder="10"
             />
           </div>
+          )}
         </section>
+        )}
 
         <section className="panel">
           <h2>Foto</h2>
@@ -734,6 +724,7 @@ function AdminApp() {
     logoId: "",
     managerPassword: "",
     allowedBackgroundColors: COLORS.map((color) => color.name),
+    teamFeatures: DEFAULT_TEAM_FEATURES,
     backgroundColor: "BLACK",
     accentColor: "YELLOW",
   });
@@ -787,6 +778,7 @@ function AdminApp() {
       logoId: team.logoId || "",
       managerPassword: "",
       allowedBackgroundColors: normalizeAllowedColors(team.allowedBackgroundColors),
+      teamFeatures: normalizeTeamFeatures(team.teamFeatures),
       backgroundColor: team.backgroundColor || "BLACK",
       accentColor: team.accentColor || "YELLOW",
     });
@@ -799,7 +791,7 @@ function AdminApp() {
     try {
       const fd = new FormData();
       Object.entries(form).forEach(([key, value]) => {
-        fd.append(key, Array.isArray(value) ? JSON.stringify(value) : value);
+        fd.append(key, Array.isArray(value) || typeof value === "object" ? JSON.stringify(value) : value);
       });
       if (logoFile) fd.append("logo", logoFile);
       sessionStorage.setItem("adminPassword", password);
@@ -821,6 +813,7 @@ function AdminApp() {
         logoId: "",
         managerPassword: "",
         allowedBackgroundColors: COLORS.map((color) => color.name),
+        teamFeatures: DEFAULT_TEAM_FEATURES,
         backgroundColor: "BLACK",
         accentColor: "YELLOW",
       });
@@ -963,6 +956,38 @@ function AdminApp() {
               if (!colors.includes(form.backgroundColor)) updateForm("backgroundColor", colors[0]);
             }}
           />
+          <div className="feature-locks">
+            <Toggle
+              checked={form.teamFeatures.allowBackgroundColor}
+              onChange={(value) => updateForm("teamFeatures", { ...form.teamFeatures, allowBackgroundColor: value })}
+            >
+              Utenti possono cambiare sfondo
+            </Toggle>
+            <Toggle
+              checked={form.teamFeatures.allowLogo}
+              onChange={(value) => updateForm("teamFeatures", { ...form.teamFeatures, allowLogo: value })}
+            >
+              Logo squadra visibile nella face
+            </Toggle>
+            <Toggle
+              checked={form.teamFeatures.allowNumbers}
+              onChange={(value) => updateForm("teamFeatures", { ...form.teamFeatures, allowNumbers: value })}
+            >
+              Numeri orologio abilitati
+            </Toggle>
+            <Toggle
+              checked={form.teamFeatures.allowAthleteName}
+              onChange={(value) => updateForm("teamFeatures", { ...form.teamFeatures, allowAthleteName: value })}
+            >
+              Nome / nickname atleta abilitato
+            </Toggle>
+            <Toggle
+              checked={form.teamFeatures.allowAthleteNumber}
+              onChange={(value) => updateForm("teamFeatures", { ...form.teamFeatures, allowAthleteNumber: value })}
+            >
+              Numero maglia abilitato
+            </Toggle>
+          </div>
           <ColorPicker label="Colore default" value={form.accentColor} onChange={(value) => updateForm("accentColor", value)} />
           <button className="btn" type="submit">Salva squadra</button>
           <div className={`status ${status.kind}`}>{status.msg}</div>
@@ -1184,6 +1209,10 @@ function normalizeAllowedColors(value) {
 function colorOptions(names) {
   const allowed = new Set(normalizeAllowedColors(names));
   return COLORS.filter((color) => allowed.has(color.name));
+}
+
+function normalizeTeamFeatures(value) {
+  return { ...DEFAULT_TEAM_FEATURES, ...(value && typeof value === "object" ? value : {}) };
 }
 
 function getRoute() {
