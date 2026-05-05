@@ -36,10 +36,19 @@ const DEVICES = [
   { id: "fenix6xpro", label: "fenix 6X Pro" },
 ];
 
-const APPLE_WATCH_PRESETS = [
-  { id: "series10-46", label: "Apple Watch Series 10 46mm", width: 416, height: 496 },
-  { id: "series10-42", label: "Apple Watch Series 10 42mm", width: 374, height: 446 },
-  { id: "ultra-49", label: "Apple Watch Ultra 49mm", width: 410, height: 502 },
+const WATCH_EXPORT_PRESETS = [
+  { id: "apple-ultra-49", label: "Apple Watch Ultra 49mm", platform: "apple-watch", width: 410, height: 502, shape: "rounded" },
+  { id: "apple-series10-46", label: "Apple Watch Series 10 46mm", platform: "apple-watch", width: 416, height: 496, shape: "rounded" },
+  { id: "apple-series10-42", label: "Apple Watch Series 10 42mm", platform: "apple-watch", width: 374, height: 446, shape: "rounded" },
+  { id: "apple-series7-9-45", label: "Apple Watch Series 7/8/9 45mm", platform: "apple-watch", width: 396, height: 484, shape: "rounded" },
+  { id: "apple-series7-9-41", label: "Apple Watch Series 7/8/9 41mm", platform: "apple-watch", width: 352, height: 430, shape: "rounded" },
+  { id: "apple-se-44", label: "Apple Watch SE 44mm", platform: "apple-watch", width: 368, height: 448, shape: "rounded" },
+  { id: "apple-se-40", label: "Apple Watch SE 40mm", platform: "apple-watch", width: 324, height: 394, shape: "rounded" },
+  { id: "wearos-round-454", label: "Wear OS rotondo 454x454", platform: "wear-os", width: 454, height: 454, shape: "round" },
+  { id: "wearos-round-450", label: "Wear OS rotondo 450x450", platform: "wear-os", width: 450, height: 450, shape: "round" },
+  { id: "wearos-round-384", label: "Wear OS rotondo 384x384", platform: "wear-os", width: 384, height: 384, shape: "round" },
+  { id: "amazfit-round-480", label: "Amazfit/Zepp rotondo 480x480", platform: "amazfit", width: 480, height: 480, shape: "round" },
+  { id: "amazfit-square-390", label: "Amazfit/Zepp rettangolare 390x450", platform: "amazfit", width: 390, height: 450, shape: "rounded" },
 ];
 
 const DEFAULT_CONFIG = {
@@ -124,7 +133,7 @@ function BuilderApp({ route }) {
   const [allowedBackgroundColors, setAllowedBackgroundColors] = useState(COLORS.map((color) => color.name));
   const [allowedHandColors, setAllowedHandColors] = useState(COLORS.map((color) => color.name));
   const [teamFeatures, setTeamFeatures] = useState(DEFAULT_TEAM_FEATURES);
-  const [appleWatchPreset, setAppleWatchPreset] = useState(APPLE_WATCH_PRESETS[0].id);
+  const [watchExportPreset, setWatchExportPreset] = useState(WATCH_EXPORT_PRESETS[0].id);
 
   const photoUrl = useMemo(
     () => (photoFile ? URL.createObjectURL(photoFile) : null),
@@ -340,17 +349,20 @@ function BuilderApp({ route }) {
     }, "image/png");
   }
 
-  function handleAppleWatchDownload() {
+  function handleWatchImageDownload() {
     const source = document.querySelector(".watch-canvas");
     if (!source) return;
-    const preset = APPLE_WATCH_PRESETS.find((item) => item.id === appleWatchPreset) || APPLE_WATCH_PRESETS[0];
+    const preset = WATCH_EXPORT_PRESETS.find((item) => item.id === watchExportPreset) || WATCH_EXPORT_PRESETS[0];
     const canvas = document.createElement("canvas");
     canvas.width = preset.width;
     canvas.height = preset.height;
     const ctx = canvas.getContext("2d");
-    const radius = Math.round(Math.min(preset.width, preset.height) * 0.16);
     ctx.save();
-    drawRoundedRect(ctx, 0, 0, preset.width, preset.height, radius);
+    if (preset.shape === "round") {
+      drawCircleClip(ctx, preset.width / 2, preset.height / 2, Math.min(preset.width, preset.height) / 2);
+    } else {
+      drawRoundedRect(ctx, 0, 0, preset.width, preset.height, Math.round(Math.min(preset.width, preset.height) * 0.16));
+    }
     ctx.clip();
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, preset.width, preset.height);
@@ -362,10 +374,10 @@ function BuilderApp({ route }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${safeFileName(config.prgFileName || config.name || "TeamFace")}-apple-watch-${preset.width}x${preset.height}.png`;
+      link.download = `${safeFileName(config.prgFileName || config.name || "TeamFace")}-${preset.platform}-${preset.width}x${preset.height}.png`;
       link.click();
       URL.revokeObjectURL(url);
-      setStatus({ msg: "Immagine Apple Watch scaricata. Usala come quadrante Foto su Apple Watch.", kind: "ok" });
+      setStatus({ msg: `${preset.label} scaricato in PNG.`, kind: "ok" });
     }, "image/png");
   }
 
@@ -741,14 +753,14 @@ function BuilderApp({ route }) {
           <button className="secondary-action" onClick={handlePreviewDownload} type="button">
             Scarica face PNG
           </button>
-          <div className="apple-watch-export">
-            <select value={appleWatchPreset} onChange={(e) => setAppleWatchPreset(e.target.value)}>
-              {APPLE_WATCH_PRESETS.map((preset) => (
+          <div className="watch-export">
+            <select value={watchExportPreset} onChange={(e) => setWatchExportPreset(e.target.value)}>
+              {WATCH_EXPORT_PRESETS.map((preset) => (
                 <option key={preset.id} value={preset.id}>{preset.label}</option>
               ))}
             </select>
-            <button className="secondary-action" onClick={handleAppleWatchDownload} type="button">
-              Scarica Apple Watch PNG
+            <button className="secondary-action" onClick={handleWatchImageDownload} type="button">
+              Scarica PNG watch
             </button>
           </div>
           <button
@@ -1305,6 +1317,12 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function drawCircleClip(ctx, x, y, radius) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.closePath();
 }
 

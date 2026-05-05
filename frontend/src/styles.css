@@ -362,12 +362,12 @@ canvas.draggable:active {
   line-height: 1.45;
 }
 
-.apple-watch-export {
+.watch-export {
   display: grid;
   gap: 8px;
 }
 
-.apple-watch-export select {
+.watch-export select {
   width: 100%;
   min-height: 38px;
   padding: 8px 10px;
