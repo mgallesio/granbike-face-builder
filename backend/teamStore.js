@@ -19,6 +19,7 @@ const VALID_COLOR_NAMES = new Set([
 ]);
 const DEFAULT_TEAM_FEATURES = {
   allowBackgroundColor: true,
+  allowHandColors: true,
   allowLogo: true,
   allowNumbers: true,
   allowAthleteName: true,
@@ -120,6 +121,10 @@ export function createTeamStore(baseDir) {
       input.allowedBackgroundColors,
       existing?.allowedBackgroundColors || [safeText(input.backgroundColor, 20) || "BLACK"]
     );
+    const allowedHandColors = safeColorList(
+      input.allowedHandColors,
+      existing?.allowedHandColors || [safeText(input.accentColor, 20) || "YELLOW"]
+    );
     const teamFeatures = safeTeamFeatures(input.teamFeatures, existing?.teamFeatures);
 
     if (logoUploadPath && logoFileName) {
@@ -138,6 +143,7 @@ export function createTeamStore(baseDir) {
         ? hashPassword(managerPassword)
         : existing?.managerPasswordHash || "",
       allowedBackgroundColors,
+      allowedHandColors,
       teamFeatures,
       defaultConfig: existing?.defaultConfig || {},
       updatedAt: now,
@@ -164,6 +170,9 @@ export function createTeamStore(baseDir) {
       allowedBackgroundColors: Object.prototype.hasOwnProperty.call(options, "allowedBackgroundColors")
         ? safeColorList(options.allowedBackgroundColors, existing.allowedBackgroundColors || [existing.backgroundColor || "BLACK"])
         : existing.allowedBackgroundColors || [existing.backgroundColor || "BLACK"],
+      allowedHandColors: Object.prototype.hasOwnProperty.call(options, "allowedHandColors")
+        ? safeColorList(options.allowedHandColors, existing.allowedHandColors || [existing.accentColor || "YELLOW"])
+        : existing.allowedHandColors || [existing.accentColor || "YELLOW"],
       teamFeatures: Object.prototype.hasOwnProperty.call(options, "teamFeatures")
         ? safeTeamFeatures(options.teamFeatures, existing.teamFeatures)
         : safeTeamFeatures(existing.teamFeatures),
@@ -309,6 +318,10 @@ export function publicTeam(team) {
       team.allowedBackgroundColors,
       team.backgroundColor ? [team.backgroundColor] : ["BLACK"]
     ),
+    allowedHandColors: safeColorList(
+      team.allowedHandColors,
+      team.accentColor ? [team.accentColor] : ["YELLOW"]
+    ),
     teamFeatures: safeTeamFeatures(team.teamFeatures),
     defaultConfig: team.defaultConfig || {},
     updatedAt: team.updatedAt,
@@ -429,6 +442,7 @@ function safeTeamFeatures(value, fallback = DEFAULT_TEAM_FEATURES) {
   const input = raw && typeof raw === "object" ? raw : {};
   return {
     allowBackgroundColor: input.allowBackgroundColor ?? base.allowBackgroundColor,
+    allowHandColors: input.allowHandColors ?? base.allowHandColors,
     allowLogo: input.allowLogo ?? base.allowLogo,
     allowNumbers: input.allowNumbers ?? base.allowNumbers,
     allowAthleteName: input.allowAthleteName ?? base.allowAthleteName,

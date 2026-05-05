@@ -170,6 +170,7 @@ app.post("/api/admin/teams/:slug/defaults", requireTeamManager, async (req, res)
   try {
     const team = await teamStore.saveTeamDefaults(req.params.slug, req.body?.config || {}, {
       allowedBackgroundColors: req.body?.allowedBackgroundColors,
+      allowedHandColors: req.body?.allowedHandColors,
       teamFeatures: req.body?.teamFeatures,
     });
     res.json(publicTeam(team));
@@ -284,6 +285,7 @@ async function applyTeamConfig(config) {
   Object.assign(config, { ...(team.defaultConfig || {}), ...config });
   const teamFeatures = {
     allowBackgroundColor: true,
+    allowHandColors: true,
     allowLogo: true,
     allowNumbers: true,
     allowAthleteName: true,
@@ -303,6 +305,16 @@ async function applyTeamConfig(config) {
   } else if (team.backgroundColor && !config.backgroundColor) {
     config.backgroundColor = team.backgroundColor;
   }
+  const allowedHandColors = Array.isArray(team.allowedHandColors)
+    ? team.allowedHandColors
+    : [];
+  if (!teamFeatures.allowHandColors) {
+    config.accentColor = team.defaultConfig?.accentColor || team.accentColor || config.accentColor;
+    config.secondHandColor = team.defaultConfig?.secondHandColor || config.secondHandColor;
+  } else if (allowedHandColors.length > 0) {
+    if (!allowedHandColors.includes(config.accentColor)) config.accentColor = allowedHandColors[0];
+    if (!allowedHandColors.includes(config.secondHandColor)) config.secondHandColor = allowedHandColors[0];
+  }
   if (!teamFeatures.allowNumbers) {
     config.showNumbers = false;
     config.numbersMode = "none";
@@ -315,7 +327,7 @@ async function applyTeamConfig(config) {
     config.athleteNumber = "";
     config.memorialLine2 = "";
   }
-  if (team.accentColor) config.accentColor = team.accentColor;
+  if (team.accentColor && !config.accentColor) config.accentColor = team.accentColor;
   if (teamFeatures.allowLogo) {
     if (!logoPath) throw new Error(`Logo non configurato per la squadra ${team.name}`);
     config.teamLogoPath = logoPath;

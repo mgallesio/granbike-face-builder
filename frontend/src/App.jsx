@@ -16,6 +16,7 @@ const COLORS = [
 const COLOR_NAMES = new Set(COLORS.map((color) => color.name));
 const DEFAULT_TEAM_FEATURES = {
   allowBackgroundColor: true,
+  allowHandColors: true,
   allowLogo: true,
   allowNumbers: true,
   allowAthleteName: true,
@@ -115,6 +116,7 @@ function BuilderApp({ route }) {
   const [availableLogos, setAvailableLogos] = useState([]);
   const [teamLogoId, setTeamLogoId] = useState("");
   const [allowedBackgroundColors, setAllowedBackgroundColors] = useState(COLORS.map((color) => color.name));
+  const [allowedHandColors, setAllowedHandColors] = useState(COLORS.map((color) => color.name));
   const [teamFeatures, setTeamFeatures] = useState(DEFAULT_TEAM_FEATURES);
 
   const photoUrl = useMemo(
@@ -161,6 +163,7 @@ function BuilderApp({ route }) {
       .then((data) => {
         if (!active) return;
         const allowedColors = normalizeAllowedColors(data.allowedBackgroundColors);
+        const handColors = normalizeAllowedColors(data.allowedHandColors);
         const features = normalizeTeamFeatures(data.teamFeatures);
         const defaultBackground = data.defaultConfig?.backgroundColor || data.backgroundColor || DEFAULT_CONFIG.backgroundColor;
         const backgroundColor = allowedColors.includes(defaultBackground)
@@ -169,6 +172,7 @@ function BuilderApp({ route }) {
         setTeam(data);
         setTeamLogoId(data.logoId || "");
         setAllowedBackgroundColors(allowedColors);
+        setAllowedHandColors(handColors);
         setTeamFeatures(features);
         setConfig((current) => ({
           ...current,
@@ -178,7 +182,12 @@ function BuilderApp({ route }) {
           teamSlug: data.slug,
           logoHidden: features.allowLogo === false,
           backgroundColor,
-          accentColor: data.accentColor || current.accentColor,
+          accentColor: handColors.includes(data.defaultConfig?.accentColor || data.accentColor)
+            ? data.defaultConfig?.accentColor || data.accentColor
+            : handColors[0],
+          secondHandColor: handColors.includes(data.defaultConfig?.secondHandColor || current.secondHandColor)
+            ? data.defaultConfig?.secondHandColor || current.secondHandColor
+            : handColors[0],
           showNumbers: features.allowNumbers === false ? false : data.defaultConfig?.showNumbers ?? current.showNumbers,
           numbersMode: features.allowNumbers === false ? "none" : data.defaultConfig?.numbersMode ?? current.numbersMode,
           athleteName: features.allowAthleteName === false ? "" : data.defaultConfig?.athleteName ?? current.athleteName,
@@ -217,6 +226,10 @@ function BuilderApp({ route }) {
   function updateTeamFeature(key, value) {
     setTeamFeatures((current) => ({ ...current, [key]: value }));
     if (key === "allowLogo") update("logoHidden", !value);
+    if (key === "allowHandColors" && !value) {
+      update("accentColor", team?.defaultConfig?.accentColor || team?.accentColor || config.accentColor);
+      update("secondHandColor", team?.defaultConfig?.secondHandColor || config.secondHandColor);
+    }
     if (key === "allowNumbers" && !value) {
       update("numbersMode", "none");
       update("showNumbers", false);
@@ -334,7 +347,7 @@ function BuilderApp({ route }) {
           "x-admin-password": adminPassword,
           "x-team-password": adminPassword,
         },
-        body: JSON.stringify({ config, allowedBackgroundColors, teamFeatures }),
+        body: JSON.stringify({ config, allowedBackgroundColors, allowedHandColors, teamFeatures }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
@@ -512,6 +525,9 @@ function BuilderApp({ route }) {
                 <Toggle checked={teamFeatures.allowBackgroundColor} onChange={(value) => updateTeamFeature("allowBackgroundColor", value)}>
                   Utenti possono cambiare sfondo
                 </Toggle>
+                <Toggle checked={teamFeatures.allowHandColors} onChange={(value) => updateTeamFeature("allowHandColors", value)}>
+                  Utenti possono cambiare colori lancette
+                </Toggle>
                 <Toggle checked={teamFeatures.allowLogo} onChange={(value) => updateTeamFeature("allowLogo", value)}>
                   Logo squadra visibile nella face
                 </Toggle>
@@ -535,18 +551,33 @@ function BuilderApp({ route }) {
                   }
                 }}
               />
+              <ColorPermissionPicker
+                label="Colori lancette utilizzabili dalla squadra"
+                value={allowedHandColors}
+                onChange={(colors) => {
+                  setAllowedHandColors(colors);
+                  if (!colors.includes(config.accentColor)) update("accentColor", colors[0]);
+                  if (!colors.includes(config.secondHandColor)) update("secondHandColor", colors[0]);
+                }}
+              />
             </>
           )}
-          <ColorPicker
-            label="Lancette ore/minuti e tacche"
-            value={config.accentColor}
-            onChange={(value) => update("accentColor", value)}
-          />
-          <ColorPicker
-            label="Lancetta secondi"
-            value={config.secondHandColor}
-            onChange={(value) => update("secondHandColor", value)}
-          />
+          {(!isTeamRoute || isAdminSettings || teamFeatures.allowHandColors) && (
+            <>
+              <ColorPicker
+                label="Lancette ore/minuti e tacche"
+                value={config.accentColor}
+                onChange={(value) => update("accentColor", value)}
+                colors={isTeamRoute ? colorOptions(allowedHandColors) : COLORS}
+              />
+              <ColorPicker
+                label="Lancetta secondi"
+                value={config.secondHandColor}
+                onChange={(value) => update("secondHandColor", value)}
+                colors={isTeamRoute ? colorOptions(allowedHandColors) : COLORS}
+              />
+            </>
+          )}
         </section>
 
         <section className="panel">
@@ -724,6 +755,7 @@ function AdminApp() {
     logoId: "",
     managerPassword: "",
     allowedBackgroundColors: COLORS.map((color) => color.name),
+    allowedHandColors: COLORS.map((color) => color.name),
     teamFeatures: DEFAULT_TEAM_FEATURES,
     backgroundColor: "BLACK",
     accentColor: "YELLOW",
@@ -778,6 +810,7 @@ function AdminApp() {
       logoId: team.logoId || "",
       managerPassword: "",
       allowedBackgroundColors: normalizeAllowedColors(team.allowedBackgroundColors),
+      allowedHandColors: normalizeAllowedColors(team.allowedHandColors),
       teamFeatures: normalizeTeamFeatures(team.teamFeatures),
       backgroundColor: team.backgroundColor || "BLACK",
       accentColor: team.accentColor || "YELLOW",
@@ -813,6 +846,7 @@ function AdminApp() {
         logoId: "",
         managerPassword: "",
         allowedBackgroundColors: COLORS.map((color) => color.name),
+        allowedHandColors: COLORS.map((color) => color.name),
         teamFeatures: DEFAULT_TEAM_FEATURES,
         backgroundColor: "BLACK",
         accentColor: "YELLOW",
@@ -956,12 +990,26 @@ function AdminApp() {
               if (!colors.includes(form.backgroundColor)) updateForm("backgroundColor", colors[0]);
             }}
           />
+          <ColorPermissionPicker
+            label="Colori lancette concessi"
+            value={form.allowedHandColors}
+            onChange={(colors) => {
+              updateForm("allowedHandColors", colors);
+              if (!colors.includes(form.accentColor)) updateForm("accentColor", colors[0]);
+            }}
+          />
           <div className="feature-locks">
             <Toggle
               checked={form.teamFeatures.allowBackgroundColor}
               onChange={(value) => updateForm("teamFeatures", { ...form.teamFeatures, allowBackgroundColor: value })}
             >
               Utenti possono cambiare sfondo
+            </Toggle>
+            <Toggle
+              checked={form.teamFeatures.allowHandColors}
+              onChange={(value) => updateForm("teamFeatures", { ...form.teamFeatures, allowHandColors: value })}
+            >
+              Utenti possono cambiare colori lancette
             </Toggle>
             <Toggle
               checked={form.teamFeatures.allowLogo}
