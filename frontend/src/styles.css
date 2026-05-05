@@ -362,6 +362,21 @@ canvas.draggable:active {
   line-height: 1.45;
 }
 
+.apple-watch-export {
+  display: grid;
+  gap: 8px;
+}
+
+.apple-watch-export select {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  background: #101113;
+  border: 1px solid #3c4048;
+  border-radius: 6px;
+  color: #f2f2f0;
+}
+
 .team-banner {
   display: grid;
   gap: 4px;

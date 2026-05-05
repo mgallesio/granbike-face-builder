@@ -36,6 +36,12 @@ const DEVICES = [
   { id: "fenix6xpro", label: "fenix 6X Pro" },
 ];
 
+const APPLE_WATCH_PRESETS = [
+  { id: "series10-46", label: "Apple Watch Series 10 46mm", width: 416, height: 496 },
+  { id: "series10-42", label: "Apple Watch Series 10 42mm", width: 374, height: 446 },
+  { id: "ultra-49", label: "Apple Watch Ultra 49mm", width: 410, height: 502 },
+];
+
 const DEFAULT_CONFIG = {
   name: "Team Face",
   prgFileName: "TeamFace",
@@ -118,6 +124,7 @@ function BuilderApp({ route }) {
   const [allowedBackgroundColors, setAllowedBackgroundColors] = useState(COLORS.map((color) => color.name));
   const [allowedHandColors, setAllowedHandColors] = useState(COLORS.map((color) => color.name));
   const [teamFeatures, setTeamFeatures] = useState(DEFAULT_TEAM_FEATURES);
+  const [appleWatchPreset, setAppleWatchPreset] = useState(APPLE_WATCH_PRESETS[0].id);
 
   const photoUrl = useMemo(
     () => (photoFile ? URL.createObjectURL(photoFile) : null),
@@ -330,6 +337,35 @@ function BuilderApp({ route }) {
       link.click();
       URL.revokeObjectURL(url);
       setStatus({ msg: "Anteprima face scaricata in PNG.", kind: "ok" });
+    }, "image/png");
+  }
+
+  function handleAppleWatchDownload() {
+    const source = document.querySelector(".watch-canvas");
+    if (!source) return;
+    const preset = APPLE_WATCH_PRESETS.find((item) => item.id === appleWatchPreset) || APPLE_WATCH_PRESETS[0];
+    const canvas = document.createElement("canvas");
+    canvas.width = preset.width;
+    canvas.height = preset.height;
+    const ctx = canvas.getContext("2d");
+    const radius = Math.round(Math.min(preset.width, preset.height) * 0.16);
+    ctx.save();
+    drawRoundedRect(ctx, 0, 0, preset.width, preset.height, radius);
+    ctx.clip();
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, preset.width, preset.height);
+    const size = Math.min(preset.width, preset.height);
+    ctx.drawImage(source, (preset.width - size) / 2, (preset.height - size) / 2, size, size);
+    ctx.restore();
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${safeFileName(config.prgFileName || config.name || "TeamFace")}-apple-watch-${preset.width}x${preset.height}.png`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus({ msg: "Immagine Apple Watch scaricata. Usala come quadrante Foto su Apple Watch.", kind: "ok" });
     }, "image/png");
   }
 
@@ -705,6 +741,16 @@ function BuilderApp({ route }) {
           <button className="secondary-action" onClick={handlePreviewDownload} type="button">
             Scarica face PNG
           </button>
+          <div className="apple-watch-export">
+            <select value={appleWatchPreset} onChange={(e) => setAppleWatchPreset(e.target.value)}>
+              {APPLE_WATCH_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>{preset.label}</option>
+              ))}
+            </select>
+            <button className="secondary-action" onClick={handleAppleWatchDownload} type="button">
+              Scarica Apple Watch PNG
+            </button>
+          </div>
           <button
             className="secondary-action"
             onClick={handlePackageBuild}
@@ -1246,6 +1292,20 @@ function safeFileName(name) {
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
     .trim()
     .slice(0, 40) || "TeamFace";
+}
+
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
 }
 
 function normalizeAllowedColors(value) {
