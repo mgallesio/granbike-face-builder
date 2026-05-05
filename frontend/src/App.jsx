@@ -23,7 +23,7 @@ const DEFAULT_TEAM_FEATURES = {
   allowAthleteNumber: true,
 };
 
-const DEVICES = [
+const FALLBACK_DEVICES = [
   { id: "fenix7pro", label: "Garmin fenix 7 Pro / Pro Solar" },
   { id: "fenix7spro", label: "Garmin fenix 7S Pro" },
   { id: "fenix7xpro", label: "Garmin fenix 7X Pro" },
@@ -127,6 +127,7 @@ function BuilderApp({ route }) {
   });
   const [apiReady, setApiReady] = useState(false);
   const [buildReady, setBuildReady] = useState(false);
+  const [devices, setDevices] = useState(FALLBACK_DEVICES);
   const [busy, setBusy] = useState(false);
   const [adminPassword, setAdminPassword] = useState(() => sessionStorage.getItem("adminPassword") || "");
   const [availableLogos, setAvailableLogos] = useState([]);
@@ -163,6 +164,30 @@ function BuilderApp({ route }) {
         if (!active) return;
         setApiReady(false);
         setBuildReady(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/devices")
+      .then((res) => {
+        if (!res.ok) throw new Error("devices");
+        return res.json();
+      })
+      .then((data) => {
+        if (!active || !Array.isArray(data) || data.length === 0) return;
+        setDevices(data);
+        setConfig((current) => (
+          data.some((device) => device.id === current.device)
+            ? current
+            : { ...current, device: data[0].id }
+        ));
+      })
+      .catch(() => {
+        if (active) setDevices(FALLBACK_DEVICES);
       });
     return () => {
       active = false;
@@ -536,7 +561,7 @@ function BuilderApp({ route }) {
               value={config.device}
               onChange={(e) => update("device", e.target.value)}
             >
-              {DEVICES.map((device) => (
+              {devices.map((device) => (
                 <option key={device.id} value={device.id}>
                   {device.label}
                 </option>

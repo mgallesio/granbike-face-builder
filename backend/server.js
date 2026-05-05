@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import { buildFace, buildStorePackage, createLogoSquadraAsset } from "./builder.js";
 import { createTeamStore, publicLogo, publicTeam } from "./teamStore.js";
 import { getInstructionPdf, renderInstructionPdf } from "./instructionPdfs.js";
+import { listDeviceOptions } from "./deviceCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -64,6 +65,14 @@ app.get("/api/instructions/:type.pdf", (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${doc.fileName}"`);
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.send(pdf);
+});
+
+app.get("/api/devices", async (req, res) => {
+  try {
+    res.json(await listDeviceOptions());
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
 });
 
 app.get("/api/teams", async (req, res) => {

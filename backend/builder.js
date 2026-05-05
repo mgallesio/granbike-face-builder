@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Mustache from "mustache";
 import sharp from "sharp";
+import { listDeviceIds } from "./deviceCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.join(__dirname, "templates");
@@ -26,12 +27,7 @@ const VALID_COLORS = new Set([
   "PURPLE", "PINK", "LT_GRAY", "DK_GRAY",
 ]);
 
-const VALID_DEVICES = new Set([
-  "fenix6", "fenix6pro", "fenix6s", "fenix6spro", "fenix6xpro",
-  "fenix7", "fenix7pro", "fenix7s", "fenix7spro", "fenix7x", "fenix7xpro",
-  "fenix7pronowifi", "fenix7xpronowifi",
-]);
-const STORE_DEVICES = [
+const PREFERRED_STORE_DEVICES = [
   "fenix7pro",
   "fenix7",
   "fenix7s",
@@ -52,8 +48,10 @@ function safeColor(c, fallback = "YELLOW") {
   return VALID_COLORS.has(c) ? c : fallback;
 }
 
-function safeDevice(d, fallback = "fenix7pro") {
-  return VALID_DEVICES.has(d) ? d : fallback;
+function safeDevice(d, availableDevices, fallback = "fenix7pro") {
+  if (availableDevices.has(d)) return d;
+  if (availableDevices.has(fallback)) return fallback;
+  return availableDevices.values().next().value || fallback;
 }
 
 function safeNumberMode(mode, showNumbers) {
@@ -173,9 +171,7 @@ function safeLogoScale(n, fallback = 100) {
  * @param {string} tmpBase cartella base per build temporanee
  */
 export async function buildFace(config, photoPath, tmpBase) {
-  const { buildDir, device } = await prepareBuild(config, photoPath, tmpBase, {
-    products: [safeDevice(config.device, "fenix7pro")],
-  });
+  const { buildDir, device } = await prepareBuild(config, photoPath, tmpBase);
 
   // Compila con monkeyc
   const SDK = process.env.SDK_PATH;
@@ -204,8 +200,9 @@ export async function buildFace(config, photoPath, tmpBase) {
 }
 
 export async function buildStorePackage(config, photoPath, tmpBase) {
+  const devices = await listDeviceIds();
   const { buildDir } = await prepareBuild(config, photoPath, tmpBase, {
-    products: STORE_DEVICES,
+    products: orderStoreDevices(devices),
   });
 
   const SDK = process.env.SDK_PATH;
@@ -234,6 +231,8 @@ export async function buildStorePackage(config, photoPath, tmpBase) {
 }
 
 async function prepareBuild(config, photoPath, tmpBase, options = {}) {
+  const availableDeviceIds = await listDeviceIds();
+  const availableDevices = new Set(availableDeviceIds);
   const numbersMode = safeNumberMode(config.numbersMode, config.showNumbers);
   const logoName = safeLogoName(config.logoName);
   const teamLogoPath = config.teamLogoPath || null;
@@ -293,9 +292,9 @@ async function prepareBuild(config, photoPath, tmpBase, options = {}) {
     HAS_MEMORIAL:
       !!safeText(config.athleteName || config.memorialLine1) || !!safeText(config.athleteNumber || config.memorialLine2),
   };
-  const device = safeDevice(config.device, "fenix7pro");
+  const device = safeDevice(config.device, availableDevices, "fenix7pro");
   const products = (options.products || [device])
-    .map((id) => safeDevice(id, "fenix7pro"))
+    .map((id) => safeDevice(id, availableDevices, device))
     .filter((id, index, arr) => arr.indexOf(id) === index)
     .map((id) => ({ id }));
   const appName = safeText(config.name, 30) || "Custom Face";
@@ -372,6 +371,13 @@ async function prepareBuild(config, photoPath, tmpBase, options = {}) {
   }
 
   return { buildDir, device };
+}
+
+function orderStoreDevices(deviceIds) {
+  const available = new Set(deviceIds);
+  const preferred = PREFERRED_STORE_DEVICES.filter((id) => available.has(id));
+  const extra = deviceIds.filter((id) => !preferred.includes(id));
+  return [...preferred, ...extra];
 }
 
 async function createPhotoAsset(photoPath, dst, scalePercent) {
