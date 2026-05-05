@@ -771,6 +771,13 @@ function BuilderApp({ route }) {
           >
             Scarica pacchetto beta Garmin (.iq)
           </button>
+          <div className="instruction-links">
+            <span>Istruzioni PDF</span>
+            <a href="/api/instructions/garmin.pdf">Garmin PRG</a>
+            <a href="/api/instructions/apple-watch.pdf">Apple Watch</a>
+            <a href="/api/instructions/wear-os.pdf">Wear OS</a>
+            <a href="/api/instructions/amazfit.pdf">Amazfit</a>
+          </div>
           {isAdminSettings && (
             <div className="admin-default-box">
               <input

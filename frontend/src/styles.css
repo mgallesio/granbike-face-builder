@@ -377,6 +377,35 @@ canvas.draggable:active {
   color: #f2f2f0;
 }
 
+.instruction-links {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #2d3036;
+}
+
+.instruction-links span {
+  grid-column: 1 / -1;
+  color: #b8b8b4;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.instruction-links a {
+  min-height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #3c4048;
+  border-radius: 6px;
+  color: #f2f2f0;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .team-banner {
   display: grid;
   gap: 4px;
