@@ -41,6 +41,7 @@ const STORE_DEVICES = [
   "fenix6",
   "fenix6pro",
   "fenix6s",
+  "fenix6spro",
   "fenix6xpro",
 ];
 

@@ -24,16 +24,17 @@ const DEFAULT_TEAM_FEATURES = {
 };
 
 const DEVICES = [
-  { id: "fenix7pro", label: "fenix 7 Pro / Pro Solar" },
-  { id: "fenix7", label: "fenix 7" },
-  { id: "fenix7s", label: "fenix 7S" },
-  { id: "fenix7x", label: "fenix 7X" },
-  { id: "fenix7spro", label: "fenix 7S Pro" },
-  { id: "fenix7xpro", label: "fenix 7X Pro" },
-  { id: "fenix6", label: "fenix 6" },
-  { id: "fenix6pro", label: "fenix 6 Pro" },
-  { id: "fenix6s", label: "fenix 6S" },
-  { id: "fenix6xpro", label: "fenix 6X Pro" },
+  { id: "fenix7pro", label: "Garmin fenix 7 Pro / Pro Solar" },
+  { id: "fenix7spro", label: "Garmin fenix 7S Pro" },
+  { id: "fenix7xpro", label: "Garmin fenix 7X Pro" },
+  { id: "fenix7", label: "Garmin fenix 7" },
+  { id: "fenix7s", label: "Garmin fenix 7S" },
+  { id: "fenix7x", label: "Garmin fenix 7X" },
+  { id: "fenix6pro", label: "Garmin fenix 6 Pro" },
+  { id: "fenix6spro", label: "Garmin fenix 6S Pro" },
+  { id: "fenix6xpro", label: "Garmin fenix 6X Pro" },
+  { id: "fenix6", label: "Garmin fenix 6" },
+  { id: "fenix6s", label: "Garmin fenix 6S" },
 ];
 
 const WATCH_EXPORT_PRESETS = [
