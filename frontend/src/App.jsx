@@ -118,6 +118,7 @@ export default function App() {
 function BuilderApp({ route }) {
   const isTeamRoute = route.mode === "team" || route.mode === "admin-team-settings";
   const isAdminSettings = route.mode === "admin-team-settings";
+  const canEditDesign = !isTeamRoute || isAdminSettings;
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [team, setTeam] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -654,57 +655,59 @@ function BuilderApp({ route }) {
           )}
         </section>
 
-        <section className="panel">
-          <h2>Elementi</h2>
-          <Toggle checked={config.showTicks} onChange={(value) => update("showTicks", value)}>
-            Tacche orarie 12/3/6/9
-          </Toggle>
-          <Toggle checked={config.showHands} onChange={(value) => update("showHands", value)}>
-            Lancette ore/minuti
-          </Toggle>
-          <Toggle checked={config.showDigitalTime} onChange={(value) => update("showDigitalTime", value)}>
-            Ora digitale
-          </Toggle>
-          <Toggle checked={config.showDate} onChange={(value) => update("showDate", value)}>
-            Data
-          </Toggle>
-          <Toggle checked={config.showAltitude} onChange={(value) => update("showAltitude", value)}>
-            Altitudine
-          </Toggle>
-          <Toggle checked={config.showSteps} onChange={(value) => update("showSteps", value)}>
-            Passi
-          </Toggle>
-          <Toggle checked={config.showCalories} onChange={(value) => update("showCalories", value)}>
-            Calorie
-          </Toggle>
-          {(!isTeamRoute || isAdminSettings || teamFeatures.allowNumbers) && (
-            <div className="field">
-              <label>Numeri</label>
-              <select
-                value={config.numbersMode}
-                onChange={(e) => {
-                  update("numbersMode", e.target.value);
-                  update("showNumbers", e.target.value !== "none");
-                }}
-              >
-                <option value="none">Nessuno</option>
-                <option value="cardinal">12/3/6/9</option>
-                <option value="all">Tutti 1-12</option>
-              </select>
-            </div>
-          )}
-          <Toggle checked={config.showSeconds} onChange={(value) => update("showSeconds", value)}>
-            Lancetta secondi
-          </Toggle>
-          <Toggle checked={config.showHr} onChange={(value) => update("showHr", value)}>
-            Frequenza cardiaca
-          </Toggle>
-          <Toggle checked={config.showBattery} onChange={(value) => update("showBattery", value)}>
-            Batteria percentuale
-          </Toggle>
-        </section>
+        {canEditDesign && (
+          <section className="panel">
+            <h2>Elementi</h2>
+            <Toggle checked={config.showTicks} onChange={(value) => update("showTicks", value)}>
+              Tacche orarie 12/3/6/9
+            </Toggle>
+            <Toggle checked={config.showHands} onChange={(value) => update("showHands", value)}>
+              Lancette ore/minuti
+            </Toggle>
+            <Toggle checked={config.showDigitalTime} onChange={(value) => update("showDigitalTime", value)}>
+              Ora digitale
+            </Toggle>
+            <Toggle checked={config.showDate} onChange={(value) => update("showDate", value)}>
+              Data
+            </Toggle>
+            <Toggle checked={config.showAltitude} onChange={(value) => update("showAltitude", value)}>
+              Altitudine
+            </Toggle>
+            <Toggle checked={config.showSteps} onChange={(value) => update("showSteps", value)}>
+              Passi
+            </Toggle>
+            <Toggle checked={config.showCalories} onChange={(value) => update("showCalories", value)}>
+              Calorie
+            </Toggle>
+            {(!isTeamRoute || isAdminSettings || teamFeatures.allowNumbers) && (
+              <div className="field">
+                <label>Numeri</label>
+                <select
+                  value={config.numbersMode}
+                  onChange={(e) => {
+                    update("numbersMode", e.target.value);
+                    update("showNumbers", e.target.value !== "none");
+                  }}
+                >
+                  <option value="none">Nessuno</option>
+                  <option value="cardinal">12/3/6/9</option>
+                  <option value="all">Tutti 1-12</option>
+                </select>
+              </div>
+            )}
+            <Toggle checked={config.showSeconds} onChange={(value) => update("showSeconds", value)}>
+              Lancetta secondi
+            </Toggle>
+            <Toggle checked={config.showHr} onChange={(value) => update("showHr", value)}>
+              Frequenza cardiaca
+            </Toggle>
+            <Toggle checked={config.showBattery} onChange={(value) => update("showBattery", value)}>
+              Batteria percentuale
+            </Toggle>
+          </section>
+        )}
 
-        {(!isTeamRoute || isAdminSettings || teamFeatures.allowLogo) && (
+        {canEditDesign && (!isTeamRoute || isAdminSettings || teamFeatures.allowLogo) && (
           <section className="panel">
             <h2>Dimensioni</h2>
             {(!isTeamRoute || isAdminSettings || teamFeatures.allowLogo) && (
@@ -771,7 +774,7 @@ function BuilderApp({ route }) {
       </aside>
 
       <main className="preview-area">
-        <WatchPreview config={config} photoUrl={photoUrl} onMoveItem={movePreviewItem} />
+        <WatchPreview config={config} photoUrl={photoUrl} onMoveItem={canEditDesign ? movePreviewItem : null} />
         <div className="actions">
           <button className="btn" onClick={handleBuild} disabled={busy || !apiReady || !buildReady}>
             {busy ? "Compilazione..." : buildReady ? "Genera PRG" : "PRG non configurato"}

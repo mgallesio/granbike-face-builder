@@ -17,6 +17,45 @@ const TMP_DIR = process.env.TMP_DIR || path.join(__dirname, "tmp");
 const UPLOAD_DIR = path.join(TMP_DIR, "uploads");
 const TEAM_DATA_DIR = process.env.TEAM_DATA_DIR || __dirname;
 const teamStore = createTeamStore(TEAM_DATA_DIR);
+const TEAM_LOCKED_DESIGN_KEYS = [
+  "showTicks",
+  "showHands",
+  "showDigitalTime",
+  "showDate",
+  "showAltitude",
+  "showSteps",
+  "showCalories",
+  "showSeconds",
+  "showHr",
+  "showBattery",
+  "showNumbers",
+  "numbersMode",
+  "hrX",
+  "hrY",
+  "batteryX",
+  "batteryY",
+  "digitalTimeX",
+  "digitalTimeY",
+  "dateX",
+  "dateY",
+  "altitudeX",
+  "altitudeY",
+  "stepsX",
+  "stepsY",
+  "caloriesX",
+  "caloriesY",
+  "athleteNameX",
+  "athleteNameY",
+  "athleteNumberX",
+  "athleteNumberY",
+  "text1X",
+  "text1Y",
+  "text2X",
+  "text2Y",
+  "logoX",
+  "logoY",
+  "logoScale",
+];
 
 await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
@@ -302,7 +341,8 @@ async function applyTeamConfig(config) {
   const team = await teamStore.getTeam(config.teamSlug);
   if (!team) throw new Error("Squadra non trovata");
   const logoPath = await teamStore.getLogoPath(team);
-  Object.assign(config, { ...(team.defaultConfig || {}), ...config });
+  const defaults = team.defaultConfig || {};
+  Object.assign(config, { ...defaults, ...config });
   const teamFeatures = {
     allowBackgroundColor: true,
     allowHandColors: true,
@@ -315,6 +355,11 @@ async function applyTeamConfig(config) {
   config.name = team.name;
   config.prgFileName = team.prgFileName;
   config.logoName = teamFeatures.allowLogo ? "logosquadra" : "";
+  for (const key of TEAM_LOCKED_DESIGN_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(defaults, key)) {
+      config[key] = defaults[key];
+    }
+  }
   const allowedBackgroundColors = Array.isArray(team.allowedBackgroundColors)
     ? team.allowedBackgroundColors
     : [];

@@ -301,7 +301,7 @@ export default function WatchPreview({ config, photoUrl, onMoveItem }) {
 
   return (
     <canvas
-      className="watch-canvas draggable"
+      className={`watch-canvas${onMoveItem ? " draggable" : ""}`}
       ref={canvasRef}
       width={W}
       height={H}
