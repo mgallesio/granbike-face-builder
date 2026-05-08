@@ -483,7 +483,7 @@ function BuilderApp({ route }) {
       <aside className="sidebar">
         <header className="topbar">
           <BrandTitle
-            title="FaceBuilder"
+            title="WatchTeam Studio"
             subtitle={
               team
                 ? isAdminSettings
@@ -1226,7 +1226,7 @@ function AdminApp() {
 function BrandTitle({ title, subtitle }) {
   return (
     <div className="brand-title">
-      <img src="/facebuilder-logo.png" alt="" />
+      <img src="/watchteam-studio-logo.png" alt="" />
       <div>
         <h1>{title}</h1>
         <p>{subtitle}</p>
