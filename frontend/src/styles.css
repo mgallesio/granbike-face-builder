@@ -31,6 +31,21 @@ body {
   padding: 4px 0 6px;
 }
 
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand-title img {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
 h1 {
   margin: 0;
   color: #ffd33d;

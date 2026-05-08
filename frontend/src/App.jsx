@@ -482,16 +482,16 @@ function BuilderApp({ route }) {
     <div className="app">
       <aside className="sidebar">
         <header className="topbar">
-          <div>
-            <h1>Granbike Face Builder</h1>
-            <p>
-              {team
+          <BrandTitle
+            title="FaceBuilder"
+            subtitle={
+              team
                 ? isAdminSettings
                   ? `${team.name} - impostazioni default`
                   : `${team.name} - link squadra`
-                : "Generatore web per watch face Garmin Connect IQ."}
-            </p>
-          </div>
+                : "Generatore web per watch face Garmin Connect IQ."
+            }
+          />
           <span className={`api-dot ${apiReady ? "ok" : "error"}`} title={apiReady ? "API online" : "API offline"} />
         </header>
 
@@ -1012,10 +1012,10 @@ function AdminApp() {
     <div className="app admin-app">
       <aside className="sidebar">
         <header className="topbar">
-          <div>
-            <h1>Backoffice squadre</h1>
-            <p>Crea link dedicati per ogni squadra sportiva.</p>
-          </div>
+          <BrandTitle
+            title="Backoffice squadre"
+            subtitle="Crea link dedicati per ogni squadra sportiva."
+          />
         </header>
 
         <form className="panel" onSubmit={saveTeam}>
@@ -1219,6 +1219,18 @@ function AdminApp() {
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+function BrandTitle({ title, subtitle }) {
+  return (
+    <div className="brand-title">
+      <img src="/facebuilder-logo.png" alt="" />
+      <div>
+        <h1>{title}</h1>
+        <p>{subtitle}</p>
+      </div>
     </div>
   );
 }
